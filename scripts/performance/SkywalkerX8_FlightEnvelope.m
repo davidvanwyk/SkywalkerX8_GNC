@@ -240,5 +240,5 @@ end
 % altitudeNonLinear = altitude(1:(sum((VaMinMaxNonLinear(:, 1) < max(VaMinMaxNonLinear(:, 2))))+1));
 % VaMaxNonLinear = VaMinMaxNonLinear(1:length(altitudeNonLinear), 2);
 
-clearvars -except SkywalkerX8
+% clearvars -except SkywalkerX8
 

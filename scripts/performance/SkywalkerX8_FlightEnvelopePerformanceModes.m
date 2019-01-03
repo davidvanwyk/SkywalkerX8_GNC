@@ -19,8 +19,9 @@
 VaPoints = zeros(7, 1);
 altitudePoints = zeros(7, 1);
 
-VaPointsScalingFraction = 0.01;
-altitudePointsScalingFraction = 0.01;
+VaPointsScalingFraction = 0.0001;
+altitudePointsScalingFraction = 0.0001;
+maxSpeedTolerance = 0.9999;
 
 % The first point to consider is the lowest altitude, lowest velocity
 VaPoints(1) = SkywalkerX8.FlightEnvelope.VaMin(1)*(1+VaPointsScalingFraction);
@@ -35,12 +36,10 @@ VaPoints(3) = max(SkywalkerX8.FlightEnvelope.VaMax(SkywalkerX8.FlightEnvelope.al
 altitudePoints(3) = max(SkywalkerX8.FlightEnvelope.altitude)*(1-altitudePointsScalingFraction);
 
 % Maximum altitude for approximately absolute maximum speed (within 1%)
-maxSpeedTolerance = 0.99;
 altitudePoints(4) = max(SkywalkerX8.FlightEnvelope.altitude(SkywalkerX8.FlightEnvelope.VaMax >= max(SkywalkerX8.FlightEnvelope.VaMax)*maxSpeedTolerance))*(1-altitudePointsScalingFraction);
 VaPoints(4) = SkywalkerX8.FlightEnvelope.VaMax(SkywalkerX8.FlightEnvelope.altitude == max(SkywalkerX8.FlightEnvelope.altitude(SkywalkerX8.FlightEnvelope.VaMax >= max(SkywalkerX8.FlightEnvelope.VaMax))))*(1-VaPointsScalingFraction);
 
 % Minimum altitude for approximately absolute maximum speed (within 1%)
-maxSpeedTolerance = 0.99;
 altitudePoints(5) = min(SkywalkerX8.FlightEnvelope.altitude(SkywalkerX8.FlightEnvelope.VaMax >= max(SkywalkerX8.FlightEnvelope.VaMax)*maxSpeedTolerance))*(1+altitudePointsScalingFraction);
 VaPoints(5) = SkywalkerX8.FlightEnvelope.VaMax(SkywalkerX8.FlightEnvelope.altitude == min(SkywalkerX8.FlightEnvelope.altitude(SkywalkerX8.FlightEnvelope.VaMax >= max(SkywalkerX8.FlightEnvelope.VaMax))))*(1-VaPointsScalingFraction);
 
@@ -99,7 +98,7 @@ for i = 1:length(altitudePoints)
     opspec.Outputs(3).y = Va;
     [op, opreport] = findop(sys, opspec, opt);
     
-    [lon_lat_A, lon_poles, lat_poles] = SkywalkerX8_FlightModes(op);
+    [lon_lat_A, lon_poles, lat_poles, sspace] = SkywalkerX8_FlightModes(op);
     [phi_max, r_max, min_R, q_max, p_max] = SkywalkerX8_Performance(opreport);
     
     SkywalkerX8.Performance.longitudinalPoles(:, i) = lon_poles;
