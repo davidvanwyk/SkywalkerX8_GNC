@@ -296,7 +296,7 @@ function InitConditions(block)
     theta = block.DialogPrm(3).Data(2);
     psi = block.DialogPrm(3).Data(3);
 
-    rotationMatrix_BodyToIntertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
+    rotationMatrix_BodyToInertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
                       cos(theta)*sin(psi), sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
                       -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
 
@@ -322,7 +322,7 @@ function InitConditions(block)
     q = block.DialogPrm(4).Data(2);
     r = block.DialogPrm(4).Data(3);
     
-    block.Dwork(2).Data(1:3) = rotationMatrix_BodyToIntertial*[u; v; w];
+    block.Dwork(2).Data(1:3) = rotationMatrix_BodyToInertial*[u; v; w];
     block.Dwork(2).Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + 1/mass.*[fx; fy; fz];
     block.Dwork(2).Data(7:9) = rotationMatrix_RollPitchYawToBody*[p; q; r];
     block.Dwork(2).Data(10:12) = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r] + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n];
@@ -398,14 +398,14 @@ function Outputs(block)
     block.ContStates.Data(13) = alpha_lon;
     block.ContStates.Data(14) = beta_lat;
     
-    rotationMatrix_BodyToIntertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
+    rotationMatrix_BodyToInertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
                       cos(theta)*sin(psi), sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
                       -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
     
     block.OutputPort(1).Data = block.Dwork(2).Data(1:3)';
     block.OutputPort(2).Data = block.ContStates.Data(1:3)';
     block.OutputPort(3).Data = block.ContStates.Data(7:9)';
-    block.OutputPort(4).Data = rotationMatrix_BodyToIntertial';
+    block.OutputPort(4).Data = rotationMatrix_BodyToInertial';
     block.OutputPort(5).Data = block.ContStates.Data(4:6)';
     block.OutputPort(6).Data = block.ContStates.Data(10:12)';
     block.OutputPort(7).Data = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r]'...
@@ -450,7 +450,7 @@ function Derivatives(block)
     q = block.ContStates.Data(11);
     r = block.ContStates.Data(12);
     
-    rotationMatrix_BodyToIntertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
+    rotationMatrix_BodyToInertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
                       cos(theta)*sin(psi), sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
                       -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
     
@@ -458,12 +458,12 @@ function Derivatives(block)
                                          0, cos(phi), -sin(phi);
                                          0, sin(phi)/cos(theta), cos(phi)/cos(theta)];
                   
-    block.Derivatives.Data(1:3) = rotationMatrix_BodyToIntertial*[u; v; w];
+    block.Derivatives.Data(1:3) = rotationMatrix_BodyToInertial*[u; v; w];
     block.Derivatives.Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + 1/mass.*[fx; fy; fz];
     block.Derivatives.Data(7:9) = rotationMatrix_RollPitchYawToBody*[p; q; r];
     block.Derivatives.Data(10:12) = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r]...
                                     + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n];
-                                
+    block.Derivatives.Data(13:14) = 0;
     block.Dwork(2).Data = block.Derivatives.Data(1:12);
     
 %endfunction

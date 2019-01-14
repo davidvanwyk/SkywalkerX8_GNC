@@ -98,7 +98,7 @@ for i = 1:length(altitudePoints)
     opspec.Outputs(3).y = Va;
     [op, opreport] = findop(sys, opspec, opt);
     
-    [lon_lat_A, lon_poles, lat_poles, sspace] = SkywalkerX8_FlightModes(op);
+    [lon_lat_A, lon_poles, lat_poles] = SkywalkerX8_FlightModes(op);
     [phi_max, r_max, min_R, q_max, p_max] = SkywalkerX8_Performance(opreport);
     
     SkywalkerX8.Performance.longitudinalPoles(:, i) = lon_poles;
@@ -160,4 +160,4 @@ end
 
 axis([0 40 0 18000]);
 
-clearvars -except SkywalkerX8
+%clearvars -except SkywalkerX8

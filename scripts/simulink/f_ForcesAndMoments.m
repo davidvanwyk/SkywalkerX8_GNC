@@ -94,7 +94,7 @@ CmAlpha = (1 - sigma_alpha)*CmAlpha + sigma_alpha*(Cmfp*sign(alpha)*sin(alpha)^2
 
 %% Calculating Forces %%
 
-Cm =  CmAlpha + Cmq*bOver2Va*q + Cmde*de;
+Cm =  CmAlpha + Cmq*cOver2Va*q + Cmde*de;
 
 fx = -m*g*sin(theta) + aerodynamicMultiple*CX + propellerMultiple*((kmotor*dt)^2 - Va^2);
 fy = m*g*cos(theta)*sin(phi) + aerodynamicMultiple*CY;
