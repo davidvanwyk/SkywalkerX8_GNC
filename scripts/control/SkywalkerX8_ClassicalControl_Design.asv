@@ -91,17 +91,40 @@ for i = 1:length(SkywalkerX8.Performance.altitude)
     alt = SkywalkerX8.Performance.altitude(i);
     Va = SkywalkerX8.Performance.Va(i);
     
-    opspec.States(9).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
-    opspec.Outputs(1).y = Va;
-    opspec.Inputs(1).u = Va;
-    opspec.Outputs(2).y = alt;
-    opspec.Inputs(2).u = alt;
-    
     % Operating point for when theta is being used to control airspeed
     
-    if ( (alt > alt_high) || (alt < alt_low) )
+    if (alt > alt_high)
         
         SkywalkerX8.Control.Longitudinal.ThetaCVaSelector = 1;
+        opSpec.States(4).Known = 0;
+        opSpec.States(6).Known = 1;
+        opSpec.States(6).x = 0;
+
+        opspec.States(9).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+        opspec.Outputs(1).y = Va;
+        opspec.Inputs(1).u = Va;
+        opspec.Outputs(2).y = alt;
+        opspec.Inputs(2).u = alt;
+
+        [op, opreport] = findop(sys, opspec, opt);
+        
+    elseif (alt < alt_low)
+        
+        SkywalkerX8.Control.Longitudinal.ThetaCVaSelector = 1;
+        opSpec.States(4).Known = 0;
+        opSpec.States(6).Known = 1;
+        opSpec.States(6).x = 0;
+        
+        % At lower altitude section of flight regime, dt is set to max
+        
+        opSpec.States(2).Known = 1;
+        opSpec.States(2).x = 1;
+        
+        opspec.States(9).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+        opspec.Outputs(1).y = Va;
+        opspec.Inputs(1).u = Va;
+        opspec.Outputs(2).y = alt;
+        opspec.Inputs(2).u = alt;
 
         [op, opreport] = findop(sys, opspec, opt);
         
@@ -110,6 +133,11 @@ for i = 1:length(SkywalkerX8.Performance.altitude)
         % Operating point for when theta is being used to control altitude
         
         SkywalkerX8.Control.Longitudinal.ThetaCVaSelector = 0;
+        opspec.Outputs(1).Known = 1;
+        opspec.Outputs(2).Known = 1;
+        opSpec.States(4).Known = 1;
+        opSpec.States(4).x = 0;
+        opSpec.States(6).Known = 0;
 
         [op, opreport] = findop(sys, opspec, opt);
         
