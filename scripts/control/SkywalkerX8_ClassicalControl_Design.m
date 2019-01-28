@@ -24,65 +24,36 @@
 
 %% Trim Setup %%
 
-SkywalkerX8.Control.Longitudinal.ThetaCVaSelector = 1;
-de_max = 15*pi/180;
-
-alt_low = 0.01*max(SkywalkerX8.Performance.altitude);
-alt_high = 0.9*max(SkywalkerX8.Performance.altitude);
-
 sys = 'SkywalkerX8_Longitudinal';
 opspec = operspec(sys);
 opt = findopOptions('DisplayReport','on');
 
 de_max = 15*pi/180;
 
-opspec.States(9).Known = [0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0]; % Only altitude and Va are known as a state
-opspec.States(9).SteadyState = [0; 0; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1]; % We don't care if inertial positions are not in steady state
-opspec.States(9).min = [-Inf; -Inf; 0; 0; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; pi/2];
-opSpec.States(9).max = opspec.States(9).min.*-1;
-
-% PIDF Controller Filter Outputs will be 0 during steady state %
-
-opSpec.States(1).Known = 1;
-opSpec.States(3).Known = 1;
-opSpec.States(5).Known = 1;
-opSpec.States(7).Known = 1;
-
-opSpec.States(1).x = 0;
-opSpec.States(3).x = 0;
-opSpec.States(5).x = 0;
-opSpec.States(7).x = 0;
-
-% Will calculate controller outputs for steady state operating points % 
-
-opSpec.States(2).Known = 0;
-opSpec.States(4).Known = 0;
-opSpec.States(6).Known = 0;
-opSpec.States(8).Known = 0;
+opspec.States(1).Known = [0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0]; % Only altitude is known as a state
+opspec.States(1).SteadyState = [0; 0; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1]; % We don't care if inertial positions are not in steady state
+opspec.States(1).min = [-Inf; -Inf; 0; 0; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; -pi/2];
+opspec.States(1).max = opspec.States(1).min.*-1;
+opspec.States(1).max(3:4) = Inf;
 
 % Constrain the actuator outputs 
 
-opSpec.States(2).min = 0; 
-opSpec.States(2).max = 1;
+opspec.Inputs(1).min = 0; 
+opspec.Inputs(1).max = 1;
 
-opSpec.States(8).min = -de_max;
-opSpec.States(8).max = de_max;
-
-% Constrain the commanded theta to be within stall
-
-opSpec.States(4).min = -SkywalkerX8.Aerodynamics.alpha_0; 
-opSpec.States(4).max = SkywalkerX8.Aerodynamics.alpha_0;
-
-opSpec.States(6).min = -SkywalkerX8.Aerodynamics.alpha_0; 
-opSpec.States(6).max = SkywalkerX8.Aerodynamics.alpha_0;
+opspec.Inputs(2).min = -de_max;
+opspec.Inputs(2).max = de_max;
 
 % Define known inputs and outputs
 
-opspec.Inputs(1).Known = 1; % We will always know commanded Va
-opspec.Inputs(2).Known = 1; % We will always know commanded h
+opspec.Inputs(1).Known = 0; % Unsure of dt for trim
+opspec.Inputs(1).u = 1;
+opspec.Inputs(2).Known = 0; % Unsure of de for trim
+opspec.Inputs(2).u = 0.01;
 
-opspec.Outputs(2).Known = 1; % We will always know expected h (due to it being a trim condition) 
-opspec.Outputs(1).Known = 1; % We will always know expected Va (due to it being a trim condition)
+opspec.Outputs(1).Known = 1; % We will always know expected Va (due to it being a trim condition) 
+opspec.Outputs(2).Known = 1; % We will always know expected h (due to it being a trim condition)
+opspec.Outputs(3).Known = 0; % Don't know theta for trim
 
 %% Trim Calculation %%
 
@@ -91,30 +62,12 @@ for i = 1:length(SkywalkerX8.Performance.altitude)
     alt = SkywalkerX8.Performance.altitude(i);
     Va = SkywalkerX8.Performance.Va(i);
     
-    opspec.States(9).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+    opspec.States(1).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
     opspec.Outputs(1).y = Va;
-    opspec.Inputs(1).u = Va;
     opspec.Outputs(2).y = alt;
-    opspec.Inputs(2).u = alt;
     
-    % Operating point for when theta is being used to control airspeed
-    
-    if ( (alt > alt_high) || (alt < alt_low) )
-        
-        SkywalkerX8.Control.Longitudinal.ThetaCVaSelector = 1;
-
-        [op, opreport] = findop(sys, opspec, opt);
-        
-    else
-    
-        % Operating point for when theta is being used to control altitude
-        
-        SkywalkerX8.Control.Longitudinal.ThetaCVaSelector = 0;
-
-        [op, opreport] = findop(sys, opspec, opt);
-        
-    end
-    
+    [op, opreport] = findop(sys, opspec, opt);
+       
     SkywalkerX8.Control.Longitudinal.OpSpec(i) = op;
     
 end
@@ -144,7 +97,7 @@ for i = 1:length(SkywalkerX8.Performance.altitude)
 
     LinOpt = linearizeOptions('SampleTime',0);  % seek continuous-time model
     
-    G = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpSpec(i),LinOpt);
+    G = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpSpec,LinOpt);
     
     ST = slTuner(sys, SkywalkerX8.Control.Longitudinal.OpSpec(i));
     addOpening(ST, {'de', 'theta', 'h', 'SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/Va', 'theta_c', 'Va_c'});

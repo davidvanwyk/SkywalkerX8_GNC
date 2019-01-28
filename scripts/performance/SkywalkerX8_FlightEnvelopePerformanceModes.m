@@ -64,8 +64,8 @@ de_max = 15*pi/180;
 
 opspec.States.Known = [0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0]; % Only altitude is known as a state
 opspec.States.SteadyState = [0; 0; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1]; % We don't care if inertial positions are not in steady state
-opspec.States.min = [-Inf; -Inf; 0; 0; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; pi/2];
-opSpec.States.max = opspec.States.min.*-1;
+opspec.States.min = [-Inf; -Inf; 0; 0; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; -pi/2];
+opspec.States.max = opspec.States.min.*-1;
 
 opspec.Inputs(1).Known = 0; % We don't know propeller speed always
 opspec.Inputs(2).Known = 0; % We don't know the exact elevator trim position
