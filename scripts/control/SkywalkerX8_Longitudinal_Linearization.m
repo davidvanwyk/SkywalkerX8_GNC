@@ -1,4 +1,4 @@
-%% Plant Linearization %%
+%% Plant Linearization - Longitudinal %%
 
 % The purpose of this section is to linearize the plant at various known
 % operating points. This will allow one to determine if gain scheduling is
