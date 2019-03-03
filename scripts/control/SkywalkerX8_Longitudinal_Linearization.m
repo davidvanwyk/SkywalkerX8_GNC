@@ -25,15 +25,18 @@
 %% Aircraft Longitudinal Trim Setup %%
 
 sys = 'SkywalkerX8_Longitudinal';
+
 opspecAirframe = operspec(sys);
 opt = findopOptions('DisplayReport','on');
 
 de_max = 15*pi/180;
 
-opspecAirframe.States(1).Known = [0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0]; % Only altitude is known as a state
-opspecAirframe.States(1).SteadyState = [0; 0; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1]; % We don't care if inertial positions are not in steady state
-opspecAirframe.States(1).min = [-Inf; -Inf; -Inf; -Inf; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; -pi/2];
-opspecAirframe.States(1).max = opspecAirframe.States(1).min.*-1;
+opspecAirframe.States(1).Known = 1;
+
+opspecAirframe.States(2).Known = [0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0]; % Only altitude is known as a state
+opspecAirframe.States(2).SteadyState = [0; 0; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1]; % We don't care if inertial positions are not in steady state
+opspecAirframe.States(2).min = [-Inf; -Inf; -Inf; -Inf; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; -pi/2];
+opspecAirframe.States(2).max = opspecAirframe.States(2).min.*-1;
 
 % Define known inputs and outputs
 
@@ -61,7 +64,8 @@ for i = 1:length(SkywalkerX8.Performance.altitude)
     alt = SkywalkerX8.Performance.altitude(i);
     Va = SkywalkerX8.Performance.Va(i);
     
-    opspecAirframe.States(1).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
+    opspecAirframe.States(1).x = alt;
+    opspecAirframe.States(2).x = [0; 0; -alt; Va; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0];
     opspecAirframe.Outputs(1).y = Va;
     opspecAirframe.Outputs(2).y = alt;
     
@@ -98,14 +102,19 @@ LinIOs = [...
 linio('SkywalkerX8_Longitudinal/dt',1,'input'),...
 linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',1,'output')];
 
-LinOpt = linearizeOptions('SampleTime',0);  % seek continuous-time model
+LinOpt = linearizeOptions('SampleTime',0,'RateConversionMethod','tustin');  % seek continuous-time model
        
 % Linearize
 
-dt2Va = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe,LinOpt);
+for i = 1:length(SkywalkerX8.Control.Longitudinal.OpAirframe)
+    
+    SkywalkerX8.Control.Longitudinal.VaLinearization = SkywalkerX8.Performance.Va(i);
+    dt2Va = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i),LinOpt);
+    SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i) = dt2Va;
+    
+end
 
-SkywalkerX8.Control.Longitudinal.Dt2VaLinearizedModels = dt2Va;
-sigma(SkywalkerX8.Control.Longitudinal.Dt2VaLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels);
 
 % End Linearize
 
@@ -126,7 +135,7 @@ hold off;
 
 % Force Va to be constant during linearization - see above%
 
-set_param(aircraftModelBlockHandle, 'FunctionName', 'ms_sixdof_VaConst');
+% set_param(aircraftModelBlockHandle, 'FunctionName', 'ms_sixdof_VaConst');
 
 LinIOs = [...
 linio('SkywalkerX8_Longitudinal/de',1,'input'),...
@@ -134,27 +143,27 @@ linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal
 linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',3,'output'),...
 linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',4,'output')];
 
-LinOpt = linearizeOptions('SampleTime',0);  % seek continuous-time model
+LinOpt = linearizeOptions('SampleTime',0,'RateConversionMethod','tustin');  % seek continuous-time model
     
 % Linearize
 
 de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe,LinOpt);
 
-SkywalkerX8.Control.Longitudinal.De2AltThetaqLinearizedModels = de2altthetaq;
-SkywalkerX8.Control.Longitudinal.De2AltLinearizedModels = SkywalkerX8.Control.Longitudinal.De2AltThetaqLinearizedModels(1, 1, :);
-SkywalkerX8.Control.Longitudinal.De2ThetaLinearizedModels = SkywalkerX8.Control.Longitudinal.De2AltThetaqLinearizedModels(2, 1, :);
-SkywalkerX8.Control.Longitudinal.De2qLinearizedModels = SkywalkerX8.Control.Longitudinal.De2AltThetaqLinearizedModels(3, 1, :);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels = de2altthetaq;
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(1, 1, :);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(2, 1, :);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(3, 1, :);
     
 % End Linearize
 
 figure(2);
-sigma(SkywalkerX8.Control.Longitudinal.De2AltLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels);
 
 figure(3);
-sigma(SkywalkerX8.Control.Longitudinal.De2ThetaLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels);
 
 figure(4);
-sigma(SkywalkerX8.Control.Longitudinal.De2qLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels);
 
 set_param(aircraftModelBlockHandle, 'FunctionName', 'ms_sixdof');
 hold off;
@@ -164,4 +173,4 @@ hold off;
 % This generates an initial block-sub for the SkywalkerX8_Longitudinal
 % model. 
 
-SkywalkerX8.Control.Longitudinal.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.De2AltThetaqLinearizedModels);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels);

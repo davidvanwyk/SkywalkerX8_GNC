@@ -68,6 +68,10 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.OpAirframe)
     atheta_2 = -rho*(Va^2)*c*S*Cmalpha/(2*Jy);
     atheta_3 = rho*(Va^2)*c*S*Cmde/(2*Jy);
     
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i) = tf([atheta_3 0], [1 atheta_1 atheta_2]);
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2ThetaLinearizedModels(i) = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i)*tf(1, [1 0]);
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2AltLinearizedModels(i) = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2ThetaLinearizedModels(i)*tf(Va, [1 0]);
+    
     etheta_max = SkywalkerX8.Performance.maxPitchAngle(i);
     
     Kp_theta = (de_max/etheta_max)*sign(atheta_3);
@@ -96,11 +100,13 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.OpAirframe)
     % Va Control via Pitch
     
     de = SkywalkerX8.Control.Longitudinal.OpAirframe(i).Inputs(2).u;
-    u = SkywalkerX8.Control.Longitudinal.OpAirframe(i).States(1).x(4);
-    w = SkywalkerX8.Control.Longitudinal.OpAirframe(i).States(1).x(6);
+    u = SkywalkerX8.Control.Longitudinal.OpAirframe(i).States(2).x(4);
+    w = SkywalkerX8.Control.Longitudinal.OpAirframe(i).States(2).x(6);
     alpha = atan2(w, u);
     
     aV_1 = (rho*Va*S/m)*(CD0 + CDalpha*alpha + CDalpha2*alpha^2 + CDde*de) + rho*Sprop*Cprop*Va/m;
+    
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.Theta2VaLinearizedModels(i) = tf(-g, [1 aV_1]);
     
     omega_n_V2 = omega_n_theta/WV2;
     
@@ -114,10 +120,12 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.OpAirframe)
     % Va Control via Throttle
     
     dt = SkywalkerX8.Control.Longitudinal.OpAirframe(i).Inputs(1).u;
-    theta = SkywalkerX8.Control.Longitudinal.OpAirframe(i).States(1).x(8);
+    theta = SkywalkerX8.Control.Longitudinal.OpAirframe(i).States(2).x(8);
     
     aV_2 = rho*Sprop*Cprop*(k^2)*dt/m;
     aV_3 = g*cos(theta);
+    
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.Dt2VaLinearizedModels(i) = tf(aV_2, [1 aV_1]); 
     
     Kp_V = (dt_max/eVa_max)*sign(aV_2);
     

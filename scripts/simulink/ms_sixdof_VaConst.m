@@ -292,9 +292,9 @@ function InitConditions(block)
     gamma_7 = block.Dwork(1).Data(7);
     gamma_8 = block.Dwork(1).Data(8);
     
-    phi = block.DialogPrm(3).Data(1);
-    theta = block.DialogPrm(3).Data(2);
-    psi = block.DialogPrm(3).Data(3);
+    phi = block.ContStates.Data(7);
+    theta = block.ContStates.Data(8);
+    psi = block.ContStates.Data(9);
 
     rotationMatrix_BodyToInertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
                       cos(theta)*sin(psi), sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
@@ -314,25 +314,27 @@ function InitConditions(block)
     m  = block.InputPort(2).Data(2);
     n  = block.InputPort(2).Data(3);
                                      
-    u = block.DialogPrm(2).Data(1);
-    v = block.DialogPrm(2).Data(2);
-    w = block.DialogPrm(2).Data(3);
+    u = block.ContStates.Data(4);
+    v = block.ContStates.Data(5);
+    w = block.ContStates.Data(6);
 
-    p = block.DialogPrm(4).Data(1);
-    q = block.DialogPrm(4).Data(2);
-    r = block.DialogPrm(4).Data(3);
+    p = block.ContStates.Data(10);
+    q = block.ContStates.Data(11);
+    r = block.ContStates.Data(12);
     
     block.Dwork(2).Data(1:3) = rotationMatrix_BodyToInertial*[u; v; w];
     block.Dwork(2).Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + 1/mass.*[fx; fy; fz];
     block.Dwork(2).Data(7:9) = rotationMatrix_RollPitchYawToBody*[p; q; r];
     block.Dwork(2).Data(10:12) = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r] + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n];
-                                   
+    
+    block.Dwork(3).Data(1) = sqrt(u^2 + v^2 + w^2); %Calculating initial Va (constant in this sim)
+    
 %endfunction
 
 function DoPostPropSetup(block)
 
   %% Setup Dwork
-  block.NumDworks                = 2;
+  block.NumDworks                = 3;
   
   block.Dwork(1).Name            = 'Gamma'; 
   block.Dwork(1).Dimensions      = 8;
@@ -345,6 +347,15 @@ function DoPostPropSetup(block)
   block.Dwork(2).DatatypeID      = 0;
   block.Dwork(2).Complexity      = 'Real';
   block.Dwork(2).UsedAsDiscState = false;
+  
+  % Create a Dwork vector for our constant Va at sim start
+  
+  block.Dwork(3).Name            = 'Va'; 
+  block.Dwork(3).Dimensions      = 1;
+  block.Dwork(3).DatatypeID      = 0;
+  block.Dwork(3).Complexity      = 'Real';
+  block.Dwork(3).UsedAsDiscState = false;
+  
   
 %endfunction
 
@@ -398,6 +409,9 @@ function Outputs(block)
     block.ContStates.Data(13) = alpha_lon;
     block.ContStates.Data(14) = beta_lat;
     
+    VaConst = block.Dwork(3).Data(1); %Constant Va we started with
+    Va = sqrt(u^2 + v^2 + w^2); %Va based on current u, v, w
+    
     rotationMatrix_BodyToInertial = [cos(theta)*cos(psi), sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi), cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
                       cos(theta)*sin(psi), sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi), cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
                       -sin(theta), sin(phi)*cos(theta), cos(phi)*cos(theta)];
@@ -406,7 +420,7 @@ function Outputs(block)
     block.OutputPort(2).Data = block.ContStates.Data(1:3)';
     block.OutputPort(3).Data = block.ContStates.Data(7:9)';
     block.OutputPort(4).Data = rotationMatrix_BodyToInertial';
-    block.OutputPort(5).Data = block.ContStates.Data(4:6)';
+    block.OutputPort(5).Data = block.ContStates.Data(4:6)'.*(VaConst/Va); %We scale our body velocities so that Va remains constant but the relative proportions can vary so that AoA can vary
     block.OutputPort(6).Data = block.ContStates.Data(10:12)';
     block.OutputPort(7).Data = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r]'...
                                     + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n]';
@@ -460,7 +474,6 @@ function Derivatives(block)
                   
     block.Derivatives.Data(1:3) = rotationMatrix_BodyToInertial*[u; v; w];
     block.Derivatives.Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + 1/mass.*[fx; fy; fz];
-    block.Derivatives.Data(4:6) = [0; 0; 0]; %Hold Va constant
     block.Derivatives.Data(7:9) = rotationMatrix_RollPitchYawToBody*[p; q; r];
     block.Derivatives.Data(10:12) = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r]...
                                     + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n];
