@@ -47,11 +47,11 @@ hold(ax52, 'on');
 ax53 = subplot(3, 1, 3);
 hold(ax53, 'on');
 
-for i = 1:length(SkywalkerX8.Performance.Va)
+for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
 
     % Select the theta controller to be the altitude loop to start with
 
-    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Controller.ThetaCSelector = 2;
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Controller.ThetaCSelector = 0;
 
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.QDE_Numerator ...
         = cell2mat(SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i).Numerator);
@@ -59,7 +59,7 @@ for i = 1:length(SkywalkerX8.Performance.Va)
         = cell2mat(SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i).Denominator);
 
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Va_trim ...
-        =  SkywalkerX8.Performance.Va(i);
+        =  SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(i);
 
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.dt_trim ...
         = SkywalkerX8.Control.Longitudinal.OpAirframe(i).Inputs(1).u;
@@ -160,11 +160,11 @@ end
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Controller.KiV ...
         = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KiV(7);
 
-for i = 1:length(SkywalkerX8.Performance.Va)
+for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
 
     % Select the theta controller to be the altitude loop to start with
 
-    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Controller.ThetaCSelector = 2;
+    SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Controller.ThetaCSelector = 0;
 
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.QDE_Numerator ...
         = cell2mat(SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i).Numerator);
@@ -172,7 +172,7 @@ for i = 1:length(SkywalkerX8.Performance.Va)
         = cell2mat(SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i).Denominator);
 
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.Va_trim ...
-        =  SkywalkerX8.Performance.Va(i);
+        =  SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(i);
 
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.ReducedOrderModel.dt_trim ...
         = SkywalkerX8.Control.Longitudinal.OpAirframe(i).Inputs(1).u;

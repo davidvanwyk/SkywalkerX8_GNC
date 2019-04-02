@@ -55,10 +55,10 @@ eVa_max = 0.5*max(SkywalkerX8.Performance.Va) - min(SkywalkerX8.Performance.Va);
 
 zeta_V = 1/sqrt(2);
 
-for i = 1:length(SkywalkerX8.Control.Longitudinal.OpAirframe)
+for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
    
-    alt = SkywalkerX8.Performance.altitude(i);
-    Va = SkywalkerX8.Performance.Va(i);
+    alt = 0; % We assume altitude is small for this flight system.
+    Va = SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(i);
     
     [~, ~, ~, rho] = atmoscoesa(alt);
     
@@ -72,7 +72,7 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.OpAirframe)
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2ThetaLinearizedModels(i) = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2qLinearizedModels(i)*tf(1, [1 0]);
     SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2AltLinearizedModels(i) = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.De2ThetaLinearizedModels(i)*tf(Va, [1 0]);
     
-    etheta_max = SkywalkerX8.Performance.maxPitchAngle(i);
+    etheta_max = interp1([SkywalkerX8.Performance.Va(1) SkywalkerX8.Performance.Va(end-1)], [SkywalkerX8.Performance.maxPitchAngle(1) SkywalkerX8.Performance.maxPitchAngle(end-1)], Va);
     
     Kp_theta = (de_max/etheta_max)*sign(atheta_3);
     

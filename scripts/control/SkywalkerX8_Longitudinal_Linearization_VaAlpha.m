@@ -1,12 +1,12 @@
-%% Plant Linearization - Longitudinal %%
+%% Plant Linearization - SkywalkerX8.Control.Longitudinal %%
 
 % The purpose of this section is to linearize the plant at various known
 % operating points. This will allow one to determine if gain scheduling is
 % needed on a controller-by-controller basis. 
 
-% Longitudinal Linearization %
+% SkywalkerX8.Control.Longitudinal Linearization %
 
-% The plant's longitudinal dynamics from a control perspective require one
+% The plant's SkywalkerX8.Control.Longitudinal dynamics from a control perspective require one
 % to establish the following linearizations: 
 
 % 1. de -> theta
@@ -22,10 +22,10 @@
 % altitude controller, and this will determine where one is in the flight
 % regime. 
 
-%% Aircraft Longitudinal Trim Setup %%
+%% Aircraft SkywalkerX8.Control.Longitudinal Trim Setup %%
 
-VaArray = linspace(SkywalkerX8.Performance.Va(1), SkywalkerX8.Performance.Va(end-1), 10);
-alphaArray = linspace(0, SkywalkerX8.Aerodynamics.alpha_0, 6);
+SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray = linspace(SkywalkerX8.Performance.Va(1), SkywalkerX8.Performance.Va(end-1), 10);
+SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray = linspace(0, SkywalkerX8.Aerodynamics.alpha_0, 6);
 
 sys = 'SkywalkerX8_Longitudinal';
 
@@ -92,12 +92,12 @@ for i = 1:length(VaArray)
     
     [op, opreport] = findop(sys, opspecAirframe, opt);
        
-    Longitudinal.OpAirframe(i, j) = op;
+    SkywalkerX8.Control.Longitudinal.OpAirframe(i, j) = op;
     
         if (strcmp('Operating point specifications were successfully met.', opreport.TerminationString))
-            Longitudinal.Success(i, j) = 1;
+            SkywalkerX8.Control.Longitudinal.Success(i, j) = 1;
         else
-            Longitudinal.Success(i, j) = 0;
+            SkywalkerX8.Control.Longitudinal.Success(i, j) = 0;
         end
     
     end
@@ -137,14 +137,14 @@ for i = 1:length(VaArray)
     
     for j = 1:length(alphaArray)
         
-        dt2Va = linearize(sys,LinIOs,Longitudinal.OpAirframe(i, j),LinOpt);
-        Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i, j) = dt2Va;
+        dt2Va = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i, j) = dt2Va;
         
     end
        
 end
 
-sigma(Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels);
 
 % End Linearize
 
@@ -172,29 +172,29 @@ LinOpt = linearizeOptions('SampleTime',0,'RateConversionMethod','tustin');  % se
     
 % Linearize
 
-de2altthetaq = linearize(sys,LinIOs,Longitudinal.OpAirframe,LinOpt);
+de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe,LinOpt);
 
-Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels = de2altthetaq;
-Longitudinal.LinearizedPlantModels.De2AltLinearizedModels = Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(1, 1, :);
-Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels = Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(2, 1, :);
-Longitudinal.LinearizedPlantModels.De2qLinearizedModels = Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(3, 1, :);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels = de2altthetaq;
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(1, 1, :);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(2, 1, :);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(3, 1, :);
     
 % End Linearize
 
 figure(2);
-sigma(Longitudinal.LinearizedPlantModels.De2AltLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels);
 
 figure(3);
-sigma(Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels);
 
 figure(4);
-sigma(Longitudinal.LinearizedPlantModels.De2qLinearizedModels);
+sigma(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels);
 
 hold off;
 
-%% Creating SkywalkerX8_Longitudinal Initial Block Subs %%
+%% Creating SkywalkerX8_SkywalkerX8.Control.Longitudinal Initial Block Subs %%
 
-% This generates an initial block-sub for the SkywalkerX8_Longitudinal
+% This generates an initial block-sub for the SkywalkerX8_SkywalkerX8.Control.Longitudinal
 % model. 
 
-LinearizedPlantModels.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels);
+SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels);
