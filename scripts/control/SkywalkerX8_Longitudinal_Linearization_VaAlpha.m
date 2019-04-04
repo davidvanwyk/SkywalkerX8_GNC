@@ -24,7 +24,7 @@
 
 %% Aircraft SkywalkerX8.Control.Longitudinal Trim Setup %%
 
-SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray = linspace(SkywalkerX8.Performance.Va(1), SkywalkerX8.Performance.Va(end-1), 10);
+SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray = linspace(SkywalkerX8.Performance.Va(1)*1.1, SkywalkerX8.Performance.Va(end-1)*0.9, 10);
 SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray = linspace(0, SkywalkerX8.Aerodynamics.alpha_0, 6);
 
 sys = 'SkywalkerX8_Longitudinal';
@@ -50,7 +50,8 @@ opspecAirframe.Inputs(2).Known = 0; % We don't know de for trim
 opspecAirframe.Outputs(1).Known = 1; % We will always know expected Va (due to it being a trim condition) 
 opspecAirframe.Outputs(2).Known = 1; % Force altitude = 0 for legal flight
 opspecAirframe.Outputs(3).Known = 0; % Don't know theta for trim
-opspecAirframe.Outputs(4).Known = 0; % Don't know q for trim 
+opspecAirframe.Outputs(4).Known = 1; % Know alpha (due to it being a trim condition)
+opspecAirframe.Outputs(5).Known = 0; % Don't know q for trim 
 
 % Define plant inputs
 
@@ -73,20 +74,21 @@ disp("Setup complete")
 
 %% Trim Calculation %%
 
-for i = 1:length(VaArray)
+for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
     
-    Va = VaArray(i);
+    Va = SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(i);
     opspecAirframe.Outputs(1).y = Va;
     
-    for j = 1:length(alphaArray)
+    for j = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray)
     
-    alpha = alphaArray(j);
+    alpha = SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray(j);
     
     u = Va*cos(alpha);
     v = 0;
     w = Va*sin(alpha);
     
     opspecAirframe.Outputs(3).y = alpha;
+    opspecAirframe.Outputs(4).y = alpha;
     
     opspecAirframe.States(2).x = [0; 0; 0; u; v; w; 0; alpha; 0; 0; 0; 0; 0; 0];
     
@@ -133,12 +135,12 @@ LinOpt = linearizeOptions('SampleTime',0,'RateConversionMethod','tustin');  % se
        
 % Linearize
 
-for i = 1:length(VaArray)
+for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
     
-    for j = 1:length(alphaArray)
+    for j = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray)
         
-        dt2Va = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
-        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i, j) = dt2Va;
+        de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i, j) = de2altthetaq;
         
     end
        
@@ -166,19 +168,26 @@ LinIOs = [...
 linio('SkywalkerX8_Longitudinal/de',1,'input'),...
 linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',2,'output'),...
 linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',3,'output'),...
-linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',4,'output')];
+linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',5,'output')];
 
 LinOpt = linearizeOptions('SampleTime',0,'RateConversionMethod','tustin');  % seek continuous-time model
     
 % Linearize
 
-de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe,LinOpt);
-
-SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels = de2altthetaq;
-SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(1, 1, :);
-SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(2, 1, :);
-SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(3, 1, :);
+for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
     
+    for j = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray)
+        
+        de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(:, :, i, j) = de2altthetaq;
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels(:, :, i, j) = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(1, 1, i, j);
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels(:, :, i, j) = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(2, 1, i, j);
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels(:, :, i, j) = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(3, 1, i, j);
+
+    end
+       
+end
+
 % End Linearize
 
 figure(2);
@@ -198,3 +207,5 @@ hold off;
 % model. 
 
 SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels);
+
+clearvars -except SkywalkerX8

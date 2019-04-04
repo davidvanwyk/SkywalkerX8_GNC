@@ -139,4 +139,5 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
     
 end
 
+clearvars -except SkywalkerX8
 

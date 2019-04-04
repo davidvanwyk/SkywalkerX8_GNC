@@ -1,4 +1,4 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <Info Type="StartUp" Visible="0" Icon="" File="scripts/utilities/cacheControl.m" Name="cacheControl">
-    <Extension Value="ac0490d6-423c-4cab-9c04-4a1eb2d97516" Name="StartUpPrev" />
+    <Extension Value="HEAD" Name="StartUpPrev" />
 </Info>
