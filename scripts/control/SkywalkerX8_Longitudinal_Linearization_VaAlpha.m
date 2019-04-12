@@ -110,6 +110,12 @@ disp("Trim Complete");
 
 %% Linearization %%
 
+% We will make grabity 0 in these linearizations and assume that the
+% small perturbation dynamics are independent of it. 
+
+originalGrav = SkywalkerX8.System.Gravity;
+SkywalkerX8.System.Gravity = 0;
+
 %% Linearizing dt to Va %%
 
 % The purpose of this section is to linearize the plant from dt to Va
@@ -123,10 +129,6 @@ disp("Trim Complete");
 figure(1);
 hold on;
 
-% Force theta to be constant during linearization - this is just to aid in 
-% the linearization process and to uncouple Va and Theta (theta impacts Va 
-% and if allowed to vary during linearization causes some problems) %
-
 LinIOs = [...
 linio('SkywalkerX8_Longitudinal/dt',1,'input'),...
 linio('SkywalkerX8_Longitudinal/SkywalkerX8 Aircraft + Aerodynamics Longitudinal',1,'output')];
@@ -139,8 +141,9 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
     
     for j = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray)
         
-        de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
-        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i, j) = de2altthetaq;
+        dt2Va = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
+        dt2Va = minreal(dt2Va);
+        SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels(:, :, i, j) = dt2Va;
         
     end
        
@@ -179,6 +182,7 @@ for i = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray)
     for j = 1:length(SkywalkerX8.Control.Longitudinal.SchedulingVariables.alphaArray)
         
         de2altthetaq = linearize(sys,LinIOs,SkywalkerX8.Control.Longitudinal.OpAirframe(i, j),LinOpt);
+        de2altthetaq = minreal(de2altthetaq); %Removing unnecessary states with pole-zero cancellation
         SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(:, :, i, j) = de2altthetaq;
         SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels(:, :, i, j) = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(1, 1, i, j);
         SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels(:, :, i, j) = SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels(2, 1, i, j);
@@ -207,5 +211,10 @@ hold off;
 % model. 
 
 SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels);
+
+% We will make grabity 0 in these linearizations and assume that the
+% small perturbation dynamics are independent of it. 
+
+SkywalkerX8.System.Gravity = originalGrav;
 
 clearvars -except SkywalkerX8
