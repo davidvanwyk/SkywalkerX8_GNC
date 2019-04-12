@@ -110,12 +110,6 @@ disp("Trim Complete");
 
 %% Linearization %%
 
-% We will make grabity 0 in these linearizations and assume that the
-% small perturbation dynamics are independent of it. 
-
-originalGrav = SkywalkerX8.System.Gravity;
-SkywalkerX8.System.Gravity = 0;
-
 %% Linearizing dt to Va %%
 
 % The purpose of this section is to linearize the plant from dt to Va
@@ -211,10 +205,5 @@ hold off;
 % model. 
 
 SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.LinearizedPlantBlockSub = append(SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels, SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltThetaqLinearizedModels);
-
-% We will make grabity 0 in these linearizations and assume that the
-% small perturbation dynamics are independent of it. 
-
-SkywalkerX8.System.Gravity = originalGrav;
 
 clearvars -except SkywalkerX8

@@ -72,7 +72,10 @@ tunedBlocks = {'PID Controller theta Kp 2D Lookup Table', 'theta Controller Kd_t
 
 % Remove all other blocks not relevant to this calculation 
 
-thetaPlantSub = plantSub;
+thetaPlantSubValue = minreal([tf(0) tf(0); tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltLinearizedModels; tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaLinearizedModels;  tf(0) tf(0); tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qLinearizedModels]);
+thetaPlantSubName = plantSubName;
+
+thetaPlantSub = struct('Name', thetaPlantSubName, 'Value', thetaPlantSubValue);
 
 controllerSub = [tf(0) tf(0) tf(0)];
 switchSub = [tf(0) tf(0) tf(0)];
