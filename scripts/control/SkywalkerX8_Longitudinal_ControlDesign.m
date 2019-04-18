@@ -43,13 +43,17 @@ plantSub = struct('Name', plantSubName, 'Value', plantSubValue);
 SkywalkerX8.Control.Longitudinal.ThetaController.KpTheta = zeros(nVa, nalpha);
 SkywalkerX8.Control.Longitudinal.ThetaController.KdTheta = zeros(nVa, nalpha);
 
+SkywalkerX8.Control.Longitudinal.ThetaController.zTheta = zeros(nVa, nalpha);
+SkywalkerX8.Control.Longitudinal.ThetaController.pTheta = zeros(nVa, nalpha);
+
 SkywalkerX8.Control.Longitudinal.altController.KpAlt = zeros(nVa, nalpha);
 SkywalkerX8.Control.Longitudinal.altController.KiAlt = zeros(nVa, nalpha);
-SkywalkerX8.Control.Longitudinal.altController.KdAlt = zeros(nVa, nalpha);
-SkywalkerX8.Control.Longitudinal.altController.NAlt  = zeros(nVa, nalpha);
 
-SkywalkerX8.Control.Longitudinal.altController.aAlt = zeros(nVa, nalpha);
-SkywalkerX8.Control.Longitudinal.altController.bAlt  = ones(nVa, nalpha); %Note that we have to do this to avoid division by 0
+SkywalkerX8.Control.Longitudinal.altController.k = zeros(nVa, nalpha);
+SkywalkerX8.Control.Longitudinal.altController.z1  = zeros(nVa, nalpha);
+SkywalkerX8.Control.Longitudinal.altController.z2  = zeros(nVa, nalpha);
+SkywalkerX8.Control.Longitudinal.altController.p1  = zeros(nVa, nalpha);
+SkywalkerX8.Control.Longitudinal.altController.p2  = zeros(nVa, nalpha);
 
 %% Theta Controller %%
 
@@ -62,13 +66,25 @@ SkywalkerX8.Control.Longitudinal.altController.bAlt  = ones(nVa, nalpha); %Note 
 
 disp('Theta Control Loop Design Started')
 
-KpInit = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KpTheta(5);
-KdInit = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KdTheta(5);
+% KpInit = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KpTheta(5);
+% KdInit = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KdTheta(5);
+% 
+% Kp = tunableSurface('Kp', KpInit, TuningGrid, ShapeFcn);
+% Kd = tunableSurface('Kd', KdInit, TuningGrid, ShapeFcn);
 
-Kp = tunableSurface('Kp', KpInit, TuningGrid, ShapeFcn);
-Kd = tunableSurface('Kd', KdInit, TuningGrid, ShapeFcn);
+KInit = -0.60743;
+zInit = -1.64;
+pInit = 0;
 
-tunedBlocks = {'PID Controller theta Kp 2D Lookup Table', 'theta Controller Kd_theta 2D Lookup Table'};
+K = tunableSurface('K', KInit, TuningGrid, ShapeFcn);
+z = tunableSurface('z', zInit, TuningGrid, ShapeFcn);
+p = tunableSurface('p', pInit, TuningGrid, ShapeFcn);
+
+% tunedBlocks = {'PID Controller theta Kp 2D Lookup Table', 'theta Controller Kd_theta 2D Lookup Table'};
+
+tunedBlocks = {'Lead Lag Controller theta K 2D Lookup Table',...
+    'Lead Lag Controller theta z 2D Lookup Table',...
+    'Lead Lag Controller theta p 2D Lookup Table'};
 
 % Remove all other blocks not relevant to this calculation 
 
@@ -81,12 +97,12 @@ controllerSub = [tf(0) tf(0) tf(0)];
 switchSub = [tf(0) tf(0) tf(0)];
 algBreakSub = tf(1);
 
-controllerVaDtName = [sys '/Gain Scheduled PI Controller Va_dt'];
+controllerVaDtName = [sys '/Gain Scheduled Controller Va_dt'];
 controllerVaDtValue = controllerSub;
 
 controllerVaDtSub = struct('Name', controllerVaDtName, 'Value', controllerVaDtValue);
 
-controllerVaThetaName = [sys '/Gain Scheduled PIDF Controller Va_theta'];
+controllerVaThetaName = [sys '/Gain Scheduled Controller Va_theta'];
 controllerVaThetaValue = controllerSub;
 
 controllerVaThetaSub = struct('Name', controllerVaThetaName, 'Value', controllerVaThetaValue);
@@ -103,13 +119,11 @@ controllerSwitchSub = struct('Name', controllerSwitchName, 'Value', controllerSw
 
 algebraicLoopBreakValue = algBreakSub;
 
-algebraicLoopBreak1Name = [sys '/Alg Break 1'];
 algebraicLoopBreak2Name = [sys '/Alg Break 2'];
 algebraicLoopBreak3Name = [sys '/Alg Break 3'];
 algebraicLoopBreak4Name = [sys '/Alg Break 4'];
 algebraicLoopBreak5Name = [sys '/Alg Break 5'];
 
-algebraicLoopBreak1Sub = struct('Name', algebraicLoopBreak1Name, 'Value', algebraicLoopBreakValue);
 algebraicLoopBreak2Sub = struct('Name', algebraicLoopBreak2Name, 'Value', algebraicLoopBreakValue);
 algebraicLoopBreak3Sub = struct('Name', algebraicLoopBreak3Name, 'Value', algebraicLoopBreakValue);
 algebraicLoopBreak4Sub = struct('Name', algebraicLoopBreak4Name, 'Value', algebraicLoopBreakValue);
@@ -120,7 +134,6 @@ BlockSubs = [thetaPlantSub;...
     controllerVaThetaSub;...
     controllerHThetaSub;...
     controllerSwitchSub;...
-    algebraicLoopBreak1Sub;...
     algebraicLoopBreak2Sub;...
     algebraicLoopBreak3Sub;...
     algebraicLoopBreak4Sub;...
@@ -147,26 +160,30 @@ POI = {'SkywalkerX8_Longitudinal_Control/dt'
 
 ST0.addPoint(POI);
 ST0.addPoint('theta_e');
-ST0.addPoint(['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
-'Gain Scheduled P Controller Theta/PID Controller theta']);
-ST0.addPoint(['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
-'Gain Scheduled P Controller Theta/theta_e/1']);
-ST0.addPoint(['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
-'Gain Scheduled P Controller Theta/PID Controller theta/1']);
+% ST0.addPoint(['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
+% 'Gain Scheduled P Controller Theta/PID Controller theta']);
+% ST0.addPoint(['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
+% 'Gain Scheduled P Controller Theta/theta_e/1']);
+% ST0.addPoint(['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
+% 'Gain Scheduled P Controller Theta/PID Controller theta/1']);
+ST0.addPoint('de');
 
 ST0.addPoint('theta_c');
 
-ST0.addOpening('theta_c')
+ST0.addOpening('theta_c');
 
 % We know we need to constrain what the maximum value can be for Kp due to
 % actuator saturation. We'll pull this from the algebraic model gains as
 % this is how they were calculated - but add these points here which define
 % across where the gain is measured.
 
-thetaPGainLimitInput = ['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
-'Gain Scheduled P Controller Theta/theta_e/1'];
-thetaPGainLimitOutput = ['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
-'Gain Scheduled P Controller Theta/PID Controller theta/1'];
+% thetaPGainLimitInput = ['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
+% 'Gain Scheduled P Controller Theta/theta_e/1'];
+% thetaPGainLimitOutput = ['SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping/'...
+% 'Gain Scheduled P Controller Theta/PID Controller theta/1'];
+
+thetaPGainLimitInput = 'theta_e';
+thetaPGainLimitOutput = 'de';
 
 % Our tuning goals are variable across the linearization points. This is
 % handled with varying goals that take in an array of conditions. We
@@ -197,7 +214,8 @@ R1 = varyingGoal(R1Template, minDecayArray, minDampingArray, maxFreqArray);
 R2 = varyingGoal(R2Template, gainArray);
 
 gainMargin = 6; % 6 dB gain margin ideally
-phaseMargin = 70; % 70 deg phase margin would provide adequate damping 1/sqrt(2) <= zeta < 1
+%phaseMargin = 70; % 70 deg phase margin would provide adequate damping 1/sqrt(2) <= zeta < 1
+phaseMargin = 40;
 R3 = TuningGoal.Margins('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/theta', gainMargin, phaseMargin);
 R3.Openings = 'SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/theta';
 
@@ -206,8 +224,12 @@ R3.Openings = 'SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynam
 % saturation) and transient performance being soft (this is just a nice to
 % have, but isn't critical to operation).
 
-ST0.setBlockParam('PID Controller theta Kp 2D Lookup Table', Kp,...
-    'theta Controller Kd_theta 2D Lookup Table', Kd);
+% ST0.setBlockParam('PID Controller theta Kp 2D Lookup Table', Kp,...
+%     'theta Controller Kd_theta 2D Lookup Table', Kd);
+
+ST0.setBlockParam('Lead Lag Controller theta K 2D Lookup Table', K,...
+    'Lead Lag Controller theta z 2D Lookup Table', z, ...
+    'Lead Lag Controller theta p 2D Lookup Table', p);
 STTheta = systune(ST0, [R1 R3], R2, sysTuneOpts);
 
 % Get values from ST and write them to our desired variables
@@ -215,19 +237,19 @@ STTheta = systune(ST0, [R1 R3], R2, sysTuneOpts);
 % values with the correct structure so that later they can be used for
 % block subs.
 
-tableValues = getBlockValue(STTheta);
-SkywalkerX8.Control.Longitudinal.ThetaController.KpThetaTF = tableValues.PID_Controller_theta_Kp_2D_Lookup_Table;
-SkywalkerX8.Control.Longitudinal.ThetaController.KdThetaTF = tableValues.theta_Controller_Kd_theta_2D_Lookup_Table;
-SkywalkerX8.Control.Longitudinal.ThetaController.KpTheta = squeeze(tableValues.PID_Controller_theta_Kp_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.ThetaController.KdTheta = squeeze(tableValues.theta_Controller_Kd_theta_2D_Lookup_Table);
-
-% Get scheduling parameters and write them to our desired variables
-% Note thase these are based on our basis function.
-
-TGS = getBlockParam(STTheta);
-SkywalkerX8.Control.Longitudinal.ThetaController.BasisFunction = TGS.PID_Controller_theta_Kp_2D_Lookup_Table.BasisFunctions;
-SkywalkerX8.Control.Longitudinal.ThetaController.KpThetaParameterizedGains = getData(TGS.PID_Controller_theta_Kp_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.ThetaController.KdThetaParameterizedGains = getData(TGS.theta_Controller_Kd_theta_2D_Lookup_Table);
+% tableValues = getBlockValue(STTheta);
+% SkywalkerX8.Control.Longitudinal.ThetaController.KpThetaTF = tableValues.PID_Controller_theta_Kp_2D_Lookup_Table;
+% SkywalkerX8.Control.Longitudinal.ThetaController.KdThetaTF = tableValues.theta_Controller_Kd_theta_2D_Lookup_Table;
+% SkywalkerX8.Control.Longitudinal.ThetaController.KpTheta = squeeze(tableValues.PID_Controller_theta_Kp_2D_Lookup_Table);
+% SkywalkerX8.Control.Longitudinal.ThetaController.KdTheta = squeeze(tableValues.theta_Controller_Kd_theta_2D_Lookup_Table);
+% 
+% % Get scheduling parameters and write them to our desired variables
+% % Note thase these are based on our basis function.
+% 
+% TGS = getBlockParam(STTheta);
+% SkywalkerX8.Control.Longitudinal.ThetaController.BasisFunction = TGS.PID_Controller_theta_Kp_2D_Lookup_Table.BasisFunctions;
+% SkywalkerX8.Control.Longitudinal.ThetaController.KpThetaParameterizedGains = getData(TGS.PID_Controller_theta_Kp_2D_Lookup_Table);
+% SkywalkerX8.Control.Longitudinal.ThetaController.KdThetaParameterizedGains = getData(TGS.theta_Controller_Kd_theta_2D_Lookup_Table);
 
 %% Alt Control Outer Loop %%
 
@@ -240,28 +262,38 @@ SkywalkerX8.Control.Longitudinal.ThetaController.KdThetaParameterizedGains = get
 
 disp('Alt Control Loop Design Started')
 
-aInit = 0.1;
-bInit = 0.1;
+% z1Init = -0.002166;
+% z2Init = -0.105;
+% p1Init = -11.53;
+% p2Init = 0;
+% kInit = -84.417;
+% 
+% z1 = tunableSurface('z1', z1Init, TuningGrid, ShapeFcn);
+% z2 = tunableSurface('z2', z2Init, TuningGrid, ShapeFcn);
+% p1 = tunableSurface('p1', p1Init, TuningGrid, ShapeFcn);
+% p2 = tunableSurface('p2', p2Init, TuningGrid, ShapeFcn);
+% K = tunableSurface('K', kInit, TuningGrid, ShapeFcn);
+% 
+% tunedBlocks = {'Lead Lag Compensator h_theta k 2D Lookup Table',...
+%     'Lead Lag Compensator h_theta z1 2D Lookup Table',...
+%     'Lead Lag Compensator h_theta z2 2D Lookup Table',...
+%     'Lead Lag Compensator h_theta p1 2D Lookup Table',...
+%     'Lead Lag Compensator h_theta p2 2D Lookup Table'};
 
-KpInit = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KpAlt(5);
-KiInit = SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KiAlt(5);
-KdInit = 0.1*KpInit;
-NInit = 1/(5*SkywalkerX8.Control.Longitudinal.AlgebraicDesign.NatFreqAlt(5)); %Make the derivative filter 5x faster than the system dynamics (to filer noise but not impact performance)
-
-a = tunableSurface('a', aInit, TuningGrid, ShapeFcn);
-b = tunableSurface('b', bInit, TuningGrid, ShapeFcn);
+KpInit = 0.27687; %SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KpAlt(5);
+KiInit = 0.27687*13.28; %SkywalkerX8.Control.Longitudinal.AlgebraicDesign.KiAlt(5);
+%KdInit = 0.1*KpInit;
+%NInit = 1/(5*SkywalkerX8.Control.Longitudinal.AlgebraicDesign.NatFreqAlt(5)); %Make the derivative filter 5x faster than the system dynamics (to filer noise but not impact performance)
 
 Kp = tunableSurface('Kp', KpInit, TuningGrid, ShapeFcn);
 Ki = tunableSurface('Ki', KiInit, TuningGrid, ShapeFcn);
-Kd = tunableSurface('Kd', KdInit, TuningGrid, ShapeFcn);
-N  = tunableSurface('N' , NInit , TuningGrid, ShapeFcn);
+%Kd = tunableSurface('Kd', KdInit, TuningGrid, ShapeFcn);
+%N  = tunableSurface('N' , NInit , TuningGrid, ShapeFcn);
 
-tunedBlocks = {'Lead Lag Compensator h_theta a 2D Lookup Table',...
-    'Lead Lag Compensator h_theta b 2D Lookup Table',...
-    'PID Controller h_theta Kp 2D Lookup Table',...
-    'PID Controller h_theta Ki 2D Lookup Table',...
-    'PID Controller h_theta Kd 2D Lookup Table',...
-    'PID Controller h_theta N 2D Lookup Table'};
+tunedBlocks = {'PI Controller h_theta Kp 2D Lookup Table',...
+    'PI Controller h_theta Ki 2D Lookup Table'};%,...
+    %'PID Controller h_theta Kd 2D Lookup Table',...
+    %'PID Controller h_theta N 2D Lookup Table'};
 
 % We want to substitute out previously tuned gains from their lookup table
 % format into a varying gain block in the model. 
@@ -274,15 +306,15 @@ tunedBlocks = {'Lead Lag Compensator h_theta a 2D Lookup Table',...
 % because we get rid of the de -> theta model, we don't need to worry about
 % breaking the loop.
 
-transFuncsTheta_CtoAlt = ss(getIOTransfer(STTheta, 'theta_c', 'h'));
+transFuncsTheta_CtoAlt = minreal(ss(getIOTransfer(STTheta, 'theta_c', 'h')));
 
 altPlantSubValue = minreal([tf(0) tf(0); tf(0) transFuncsTheta_CtoAlt; tf(0) tf(0);  tf(0) tf(0); tf(0) tf(0)]);
 altPlantSubName = plantSubName;
 
 altPlantSub = struct('Name', altPlantSubName, 'Value', altPlantSubValue);
 
-thetaControllerBlockSubName = 'SkywalkerX8_Longitudinal_Control/2DOF Controller Theta + Rate Damping';
-thetaControllerBlockSubValue = [tf(1) tf(0) tf(0) tf(0)];
+thetaControllerBlockSubName = 'SkywalkerX8_Longitudinal_Control/Gain Scheduled Controller Theta';
+thetaControllerBlockSubValue = [tf(1) tf(0) tf(0)];
 
 thetaControllerBlockSub = struct('Name', thetaControllerBlockSubName,... 
     'Value', thetaControllerBlockSubValue);
@@ -293,12 +325,12 @@ controllerSub = [tf(0) tf(0) tf(0)];
 switchSub = [tf(0) tf(0) tf(1)]; %The switch is subbed out to be unity gain from input 3 to output 1
 algBreakSub = tf(1);
 
-controllerVaDtName = [sys '/Gain Scheduled PI Controller Va_dt'];
+controllerVaDtName = [sys '/Gain Scheduled Controller Va_dt'];
 controllerVaDtValue = controllerSub;
 
 controllerVaDtSub = struct('Name', controllerVaDtName, 'Value', controllerVaDtValue);
 
-controllerVaThetaName = [sys '/Gain Scheduled PIDF Controller Va_theta'];
+controllerVaThetaName = [sys '/Gain Scheduled Controller Va_theta'];
 controllerVaThetaValue = controllerSub;
 
 controllerVaThetaSub = struct('Name', controllerVaThetaName, 'Value', controllerVaThetaValue);
@@ -310,13 +342,11 @@ controllerSwitchSub = struct('Name', controllerSwitchName, 'Value', controllerSw
 
 algebraicLoopBreakValue = algBreakSub;
 
-algebraicLoopBreak1Name = [sys '/Alg Break 1'];
 algebraicLoopBreak2Name = [sys '/Alg Break 2'];
 algebraicLoopBreak3Name = [sys '/Alg Break 3'];
 algebraicLoopBreak4Name = [sys '/Alg Break 4'];
 algebraicLoopBreak5Name = [sys '/Alg Break 5'];
 
-algebraicLoopBreak1Sub = struct('Name', algebraicLoopBreak1Name, 'Value', algebraicLoopBreakValue);
 algebraicLoopBreak2Sub = struct('Name', algebraicLoopBreak2Name, 'Value', algebraicLoopBreakValue);
 algebraicLoopBreak3Sub = struct('Name', algebraicLoopBreak3Name, 'Value', algebraicLoopBreakValue);
 algebraicLoopBreak4Sub = struct('Name', algebraicLoopBreak4Name, 'Value', algebraicLoopBreakValue);
@@ -326,7 +356,6 @@ BlockSubs = [altPlantSub;...
     controllerVaDtSub;...
     controllerVaThetaSub;...
     controllerSwitchSub;...
-    algebraicLoopBreak1Sub;...
     algebraicLoopBreak2Sub;...
     algebraicLoopBreak3Sub;...
     algebraicLoopBreak4Sub;...
@@ -352,7 +381,10 @@ altControllerName = [sys '/Gain Scheduled Controller h_theta'];
 % across where the gain is measured.
 
 altPGainLimitInput = 'h_e';
-altPGainLimitOutput = [altControllerName '/PIDF Controller h_theta/POut'];
+altPGainLimitOutput = 'theta_c_h';
+
+% altPGainLimitInput = 'h_e';
+% altPGainLimitOutput = [sys '/theta_c_h'];
 
 % General plant IO
 
@@ -368,7 +400,11 @@ ST1.addPoint(POI);
 ST1.addPoint(altPGainLimitInput);
 ST1.addPoint(altPGainLimitOutput);
 
-ST1.addPoint('h_c');
+ST1.addPoint([sys '/h_c']);
+ST1.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/Va');
+ST1.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/theta');
+ST1.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/alpha');
+ST1.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/q');
 
 % Our tuning goals are variable across the linearization points. This is
 % handled with varying goals that take in an array of conditions. We
@@ -380,6 +416,7 @@ minDampingArray = zeros(nVa, nalpha);
 maxFreqArray = zeros(nVa, nalpha);
 
 gainArray = zeros(nVa, nalpha);
+minTimeToGain1mAltitude = zeros(nVa, nalpha);
 
 maximumExpectedAltitude = 50; % This is 1/10 of the absolute max altitude expected
 
@@ -397,6 +434,8 @@ for i = 1:nVa
 
     gainArray(i, :) = abs(maximumAllowedTheta/maximumExpectedAltitude);
     
+    minTimeToGain1mAltitude(i, :) = 1/Va*sin(maximumAllowedTheta);
+    
 end
 
 % Create varying tuning goal templates @(param1, param2) param1*param2 will
@@ -404,9 +443,11 @@ end
 
 R1Template = @(minDecay, minDamping, maxFreq) TuningGoal.Poles(minDecay, minDamping, maxFreq);
 R2Template = @(gain) TuningGoal.Gain(altPGainLimitInput, altPGainLimitOutput, gain);
+R4Template = @(tau) TuningGoal.StepTracking([sys '/h_c'], [sys '/h'], tau);
 
 R1 = varyingGoal(R1Template, minDecayArray, minDampingArray, maxFreqArray);
 R2 = varyingGoal(R2Template, gainArray);
+R4 = varyingGoal(R4Template, 5*ones(nVa, nalpha)); %Make 10s the goal.
 
 gainMargin = 6; % 6 dB gain margin ideally
 phaseMargin = 70; % 70 deg phase margin would provide adequate damping 1/sqrt(2) <= zeta < 1
@@ -418,18 +459,22 @@ R3.Openings = 'SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynam
 % saturation) and transient performance being soft (this is just a nice to
 % have, but isn't critical to operation).
 
-ST1.setBlockParam('Lead Lag Compensator h_theta a 2D Lookup Table', a,...
-    'Lead Lag Compensator h_theta b 2D Lookup Table', b,...
-    'PID Controller h_theta Kp 2D Lookup Table', Kp,...
-    'PID Controller h_theta Ki 2D Lookup Table', Ki,...
-    'PID Controller h_theta Kd 2D Lookup Table', Kd,...
-    'PID Controller h_theta N 2D Lookup Table', N);
+ST1.setBlockParam('PI Controller h_theta Kp 2D Lookup Table', Kp,...
+    'PI Controller h_theta Ki 2D Lookup Table', Ki);%,...
+    %'PID Controller h_theta Kd 2D Lookup Table', Kd,...
+    %'PID Controller h_theta N 2D Lookup Table', N);
 
-STAlt = systune(ST1, R3, R1, sysTuneOpts);
+% ST1.setBlockParam('Lead Lag Compensator h_theta k 2D Lookup Table', K,...
+%     'Lead Lag Compensator h_theta z1 2D Lookup Table', z1,...
+%     'Lead Lag Compensator h_theta z2 2D Lookup Table', z2,...
+%     'Lead Lag Compensator h_theta p1 2D Lookup Table', p1,...
+%     'Lead Lag Compensator h_theta p2 2D Lookup Table', p2);
+
+STAlt = systune(ST1, R4, sysTuneOpts);
 
 % Get values from ST and write them to our desired variables
 
-% tableValues = getBlockValue(ST);
+% tableValues = getBlockValue(STAlt);
 % SkywalkerX8.Control.Longitudinal.ThetaController.KpTheta = squeeze(tableValues.PID_Controller_theta_Kp_2D_Lookup_Table);
 % SkywalkerX8.Control.Longitudinal.ThetaController.KdTheta = squeeze(tableValues.theta_Controller_Kd_theta_2D_Lookup_Table);
 % 
