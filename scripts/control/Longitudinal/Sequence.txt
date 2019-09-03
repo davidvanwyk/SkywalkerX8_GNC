@@ -1,0 +1,9 @@
+Correct sequence to run these is:
+
+1. SkywalkerX8_Longitudinal_Linearization_VaAlpha
+2. SkywalkerX8_Longitudinal_Linearization_Va
+3. SkywalkerX8_Longitudinal_ControlDesign_VaAlpha
+4. SkywalkerX8_Longitudinal_ControlDesign_Va
+
+Optional. SkywalkerX8_Longitudinal_LinearModelPrediction
+Optional. SkywalkerX8_Longitudinal_LinearizedModelAnalysis

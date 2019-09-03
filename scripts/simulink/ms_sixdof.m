@@ -257,8 +257,17 @@ function InitConditions(block)
     
     %% 0-Wind Alpha Beta %%
     block.ContStates.Data(13) = atan2(block.DialogPrm(2).Data(3), block.DialogPrm(2).Data(1));
-    block.ContStates.Data(14) = atan2(block.DialogPrm(2).Data(2), sqrt(block.DialogPrm(2).Data(1)^2 + block.DialogPrm(2).Data(3)^2));
-
+    
+    if (sqrt(block.DialogPrm(2).Data(1)^2 + block.DialogPrm(2).Data(2)^2 + block.DialogPrm(2).Data(3)^2) <= 0.01)
+        
+        block.ContStates.Data(14) = 0;
+        
+    else
+        
+        block.ContStates.Data(14) = asin(block.DialogPrm(2).Data(2)/sqrt(block.DialogPrm(2).Data(1)^2 + block.DialogPrm(2).Data(2)^2 + block.DialogPrm(2).Data(3)^2));
+        
+    end
+    
     %% Initialise DWork
     Jxx = block.DialogPrm(6).Data(1, 1);
     Jxy = block.DialogPrm(6).Data(1, 2);
@@ -323,10 +332,10 @@ function InitConditions(block)
     r = block.DialogPrm(4).Data(3);
     
     block.Dwork(2).Data(1:3) = rotationMatrix_BodyToInertial*[u; v; w];
-    block.Dwork(2).Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + 1/mass.*[fx; fy; fz];
+    block.Dwork(2).Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + (1/mass)*[fx; fy; fz];
     block.Dwork(2).Data(7:9) = rotationMatrix_RollPitchYawToBody*[p; q; r];
     block.Dwork(2).Data(10:12) = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r] + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n];
-                                   
+    
 %endfunction
 
 function DoPostPropSetup(block)
@@ -389,7 +398,17 @@ function Outputs(block)
     psi = wrapToPi(psi);
     
     alpha_lon = atan2(w, u);
-    beta_lat = atan2(v, sqrt(u^2 + v^2 + w^2));
+    
+    if (sqrt(u^2 + v^2 + w^2) >= 0.01)
+       
+        beta_lat = asin(v/sqrt(u^2 + v^2 + w^2));
+    
+    else
+        
+        beta_lat = 0;
+        
+    end
+    
     
     block.ContStates.Data(7) = phi;
     block.ContStates.Data(8) = theta;
@@ -410,8 +429,8 @@ function Outputs(block)
     block.OutputPort(6).Data = block.ContStates.Data(10:12)';
     block.OutputPort(7).Data = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r]'...
                                     + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n]';
-    block.OutputPort(8).Data = [r*v - q*w; p*w - r*u; q*u - p*v]' + 1/mass.*[fx; fy; fz]';
-    block.OutputPort(9).Data = 1/mass.*[fx; fy; fz]';
+    block.OutputPort(8).Data = [r*v - q*w; p*w - r*u; q*u - p*v]' + (1/mass)*[fx; fy; fz]';
+    block.OutputPort(9).Data = (1/mass)*[fx; fy; fz]';
   
 %endfunction
 
@@ -459,7 +478,7 @@ function Derivatives(block)
                                          0, sin(phi)/cos(theta), cos(phi)/cos(theta)];
                   
     block.Derivatives.Data(1:3) = rotationMatrix_BodyToInertial*[u; v; w];
-    block.Derivatives.Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + 1/mass.*[fx; fy; fz];
+    block.Derivatives.Data(4:6) = [r*v - q*w; p*w - r*u; q*u - p*v] + [fx; fy; fz]*(1/mass);
     block.Derivatives.Data(7:9) = rotationMatrix_RollPitchYawToBody*[p; q; r];
     block.Derivatives.Data(10:12) = [gamma_1*p*q - gamma_2*q*r; gamma_5*p*r - gamma_6*(p^2 - r^2); gamma_7*p*q - gamma_1*q*r]...
                                     + [gamma_3*l + gamma_4*n; m/Jyy; gamma_4*l + gamma_8*n];
