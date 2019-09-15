@@ -6,8 +6,8 @@ load('SkywalkerX8.mat');
 
 % Max Possible Inputs due to Actuator Limits%
 
-de_max = 15*pi/180;
-da_max = 15*pi/180;
+de_max = 2*15*pi/180; %x2 because we can use both elevons
+da_max = 2*15*pi/180; %x2 because we can use both elevons
 
 CD = SkywalkerX8.Aerodynamics.CD;
 CL = SkywalkerX8.Aerodynamics.CL;
@@ -18,7 +18,7 @@ b = SkywalkerX8.Geometry.b;
 c = SkywalkerX8.Geometry.c;
 
 de = -de_max;
-da = -da_max;
+da = da_max; %Positive da means positive roll rate, unlike pitch
 m = SkywalkerX8.System.Mass;
 g = SkywalkerX8.System.Gravity;
 
@@ -32,7 +32,7 @@ CLalpha = CL(2);
 CLde = CL(4);
 
 Cl0 = CI(1);
-Clr = CI(4);
+Clp = CI(3);
 Clda = CI(5);
 
 Cm0 = Cm(1);
@@ -79,9 +79,9 @@ r_max = g*tan(phi_max)/Va;
 min_R = Va/r_max;
 
 alpha = SkywalkerX8.Aerodynamics.alpha_0;
-de = de_max; % Since the following are in the transient, we don't need moment balance
+de = -de_max; % Since the following are in the transient, we don't need moment balance (we want positive pitch so make this negative)
 
 q_max = -(Cm0 + Cmalpha*alpha + Cmde*de)*2*Va/(Cmq*c);
-p_max = -(Cl0 + Clda*da)*2*Va/(b*Clr);
+p_max = -(Cl0 + Clda*da)*2*Va/(b*Clp);
 
 end

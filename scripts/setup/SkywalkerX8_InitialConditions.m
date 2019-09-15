@@ -12,7 +12,7 @@ SkywalkerX8.InitialConditions.da = 0;
 % Use a "fresh breeze" definition to get magnitude of wind velocity (8 -
 % 10.7 m/s)
 
-SkywalkerX8.Ambient.Wind.wnwewd = [0, 0, 0]; %[6.5, 6.5, 0];
+SkywalkerX8.Ambient.Wind.wnwewd = [6.5, 6.5, 0];
 
 SkywalkerX8.InitialConditions.uvw = SkywalkerX8.InitialConditions.uvw;
 

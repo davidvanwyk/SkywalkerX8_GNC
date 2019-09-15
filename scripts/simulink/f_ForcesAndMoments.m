@@ -63,16 +63,18 @@ else
 end
 %% Drag and Lift Coefficient Calculation %%
 
-CDCalc = CD0 + CDalpha*alpha + CDalpha2*(alpha^2) + CDde*(de^2) + CDq*cOver2Va*q + CDbeta2*(beta^2) + CDbeta*beta;
+CDAlpha = CD0 + CDalpha*alpha + CDalpha2*(alpha^2);
 CLAlpha = CL0 + CLalpha*alpha;
 
 %% Flat Plate Stall Model %%
 
-sigma_alpha = (1 + exp(-M_trans*(alpha - alpha_0)) + exp(M_trans*(alpha + alpha_0)))/((1 + exp(-M_trans*(alpha - alpha_0)))*(1 + exp(M_trans*(alpha+alpha_0))));
-CLAlpha = (1-sigma_alpha)*CLAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^2)*cos(alpha));
+% sigma_alpha = (1 + exp(-M_trans*(alpha - alpha_0)) + exp(M_trans*(alpha + alpha_0)))/((1 + exp(-M_trans*(alpha - alpha_0)))*(1 + exp(M_trans*(alpha+alpha_0))));
+% CLAlpha = (1-sigma_alpha)*CLAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^2)*cos(alpha));
+% CDAlpha = (1-sigma_alpha)*CDAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^3));
 
 %% Conversion of Drag and Lift Coeffecients in vehicle frame, CD and CL, to body frame, CX and CZ %%
 
+CDCalc = CDAlpha + CDde*(de^2) + CDq*cOver2Va*q + CDbeta2*(beta^2) + CDbeta*beta;
 CLCalc = CLAlpha + CLq*cOver2Va*q + CLde*de;
 
 CXCZ = [cos(alpha), -sin(alpha); sin(alpha), cos(alpha)]*[CDCalc; CLCalc];
@@ -90,7 +92,7 @@ Cn = Cn0 + Cnbeta*beta + Cnp*bOver2Va*p + Cnr*bOver2Va*r + Cnda*da;
 
 %% Flat Plate Stall Model %%
 
-CmAlpha = (1 - sigma_alpha)*CmAlpha + sigma_alpha*(Cmfp*sign(alpha)*sin(alpha)^2);
+% CmAlpha = (1 - sigma_alpha)*CmAlpha + sigma_alpha*(Cmfp*sign(alpha)*sin(alpha)^2);
 
 %% Calculating Forces %%
 

@@ -48,7 +48,7 @@ opspecAirframe.Inputs(3).max = da_max;
 opspecAirframe.Inputs(2).u = -0.1;
 opspecAirframe.Inputs(3).u = 0;
 
-% All outputs except Va 0 for wings-level trim
+% All outputs except Va are 0 for wings-level trim
 
 opspecAirframe.Outputs(2).y = 0;
 opspecAirframe.Outputs(3).y = deg2rad(0);

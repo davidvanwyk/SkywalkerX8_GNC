@@ -14,7 +14,7 @@
 
 altitude = linspace(0, 30000, 300); % Altitude vector of interest (20m tolerance)
 
-de_max = 15*pi/180; % Maximum expected elevator angle available to the actuator
+de_max = 2*15*pi/180; % Maximum expected elevator angle available to the actuator (2x max elevon deflection)
 motor_power_max = 900; % Maximum expected power permissable to the motors
 
 %% Lift Balance %%
@@ -45,14 +45,6 @@ Vasqrtrhomin = sqrt(2*SkywalkerX8.System.Mass*SkywalkerX8.System.Gravity/(Skywal
 VaMinDragMaxThrust = sqrt(SkywalkerX8.Propeller.Sprop*SkywalkerX8.Propeller.Cprop*SkywalkerX8.Propeller.kmotor^2/(SkywalkerX8.Geometry.S*(SkywalkerX8.Aerodynamics.CD(1) + SkywalkerX8.Aerodynamics.CD(end)*deMinLift) + SkywalkerX8.Propeller.Sprop*SkywalkerX8.Propeller.Cprop));
   
 %% Initialising Non-Linear Model %%
-
-fun = @SkywalkerX8_LinearFlightEnvelopeForceMomentBalance;
-opts = optimoptions('lsqnonlin');
-opts.Display = 'off';
-opts.MaxIterations = 10000;
-opts.MaxFunctionEvaluations = 10000;
-lb = [0 0];
-ub = [SkywalkerX8.Aerodynamics.alpha_0 1];
 
 sys = 'SkywalkerX8_TrimAndLinearize';
 opspec = operspec(sys);
@@ -133,42 +125,6 @@ for i = 1:length(altitude)
     Vamin = round(Vamin*0.75, 0);
     
     SkywalkerX8.Solver.alt = alt;
-    
-    exitflag(i, 1) = 0;
-    
-%     while exitflag(i, 1) <= 0
-%         
-%         Vamax = Vamax - 0.1;
-%         
-%         if Vamax <= Vamin
-%             break
-%         end
-%         
-%         x0 = [0.05, 0.9];
-%         SkywalkerX8.Solver.Va = Vamax;
-%         save('SkywalkerX8.mat', 'SkywalkerX8');
-%         
-%         [x,resnorm,residual,exitflag(i, 1),output] = lsqnonlin(fun, x0, lb, ub, opts);
-%         
-%     end
-%     
-%     exitflag(i, 2) = 0;
-%     
-%     while exitflag(i, 2) <= 0
-%         
-%         Vamin = Vamin + 0.1;
-%         
-%         if Vamin >= Vamax
-%             break
-%         end
-%         
-%         x0 = [0.2, 0.5];
-%         SkywalkerX8.Solver.Va = Vamin;
-%         save('SkywalkerX8.mat', 'SkywalkerX8');
-%         
-%         [x,resnorm,residual,exitflag(i, 2),output] = lsqnonlin(fun, x0, lb, ub, opts);
-%         
-%     end
     
     while true
         

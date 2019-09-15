@@ -19,9 +19,9 @@
 VaPoints = zeros(7, 1);
 altitudePoints = zeros(7, 1);
 
-VaPointsScalingFraction = 0.0001;
+VaPointsScalingFraction = 0.01;
 altitudePointsScalingFraction = 0.0001;
-maxSpeedTolerance = 0.9999;
+maxSpeedTolerance = 0.99;
 
 % The first point to consider is the lowest altitude, lowest velocity
 VaPoints(1) = SkywalkerX8.FlightEnvelope.VaMin(1)*(1+VaPointsScalingFraction);
@@ -60,11 +60,11 @@ sys = 'SkywalkerX8_TrimAndLinearize';
 opspec = operspec(sys);
 opt = findopOptions('DisplayReport','off');
 
-de_max = 15*pi/180;
+de_max = 2*15*pi/180;
 
 opspec.States.Known = [0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0]; % Only altitude is known as a state
 opspec.States.SteadyState = [0; 0; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1]; % We don't care if inertial positions are not in steady state
-opspec.States.min = [-Inf; -Inf; 0; 0; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; -pi/2];
+opspec.States.min = [-Inf; -Inf; -Inf; -Inf; -Inf; -Inf; -pi/2; -SkywalkerX8.Aerodynamics.alpha_0; -pi/2; -Inf; -Inf; -Inf; -pi/2; -pi/2];
 opspec.States.max = opspec.States.min.*-1;
 
 opspec.Inputs(1).Known = 0; % We don't know propeller speed always
@@ -126,11 +126,11 @@ plot(SkywalkerX8.Performance.Va, SkywalkerX8.Performance.altitude, 'ro');
 
 for i = 1:length(altitudePoints)
    
-    txt = {['\phi_{max}: ', num2str(SkywalkerX8.Performance.MaxBankAngle(i)), ' rad'],...
-           ['R_{min}: ', num2str(SkywalkerX8.Performance.MinTurnRadius(i)), ' m'],...
-           ['p_{max}: ', num2str(SkywalkerX8.Performance.maxRollRate(i)), ' rad/s'],...
-           ['q_{max}: ', num2str(SkywalkerX8.Performance.maxPitchRate(i)), ' rad/s'],...
-           ['r_{max}: ', num2str(SkywalkerX8.Performance.maxYawRate(i)), ' rad/s']};
+    txt = {['\phi_{max}: ', num2str(SkywalkerX8.Performance.MaxBankAngle(i), "%.2f"), ' rad'],...
+           ['R_{min}: ', num2str(SkywalkerX8.Performance.MinTurnRadius(i), "%.2f"), ' m'],...
+           ['p_{max}: ', num2str(SkywalkerX8.Performance.maxRollRate(i), "%.2f"), ' rad/s'],...
+           ['q_{max}: ', num2str(SkywalkerX8.Performance.maxPitchRate(i), "%.2f"), ' rad/s'],...
+           ['r_{max}: ', num2str(SkywalkerX8.Performance.maxYawRate(i), "%.2f"), ' rad/s']};
        
     switch i
         case 1

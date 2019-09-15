@@ -23,7 +23,7 @@ SkywalkerX8.Sensors.GPS.East.TimeConstant = 1100; % s
 SkywalkerX8.Sensors.GPS.Alt.StdDev = 0.4; % m
 SkywalkerX8.Sensors.GPS.Alt.TimeConstant = 1100; % s
 
-SkywalkerX8.Sensors.GPS.Velocity.StdDev = 0.05/4; %m/s (VN-200 gives a velocity error band of +- 0.05m/s, we tread this as 4-sigma).
+SkywalkerX8.Sensors.GPS.Velocity.StdDev = 0.05/4; %m/s (VN-200 gives a velocity error band of +- 0.05m/s, we treat this as 4-sigma).
 
 %% IMU Setup %%
 
@@ -95,7 +95,7 @@ SkywalkerX8.Sensors.IMU.Gyroscope.Z.NoiseDensity = deg2rad(0.005); % Datasheet g
 % our sample frequency is 5x the bandwidth. We also know that we filter our
 % measurments down to 2 Hz in order to avoid actuator issues in the
 % controller, so this should be sufficiently far enough away from that to
-% introduce issues.
+% not introduce issues.
 
 SkywalkerX8.Sensors.IMU.Gyroscope.X.BandwidthHz = 20;
 SkywalkerX8.Sensors.IMU.Gyroscope.Y.BandwidthHz = 20;
