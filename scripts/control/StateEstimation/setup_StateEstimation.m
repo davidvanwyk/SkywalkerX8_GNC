@@ -239,11 +239,11 @@ SkywalkerX8.Sensors.EKF.GPSSmoothing.MeasurementSampleTime = SkywalkerX8.Sensors
 % We filter some of our output data to ensure we don't measure physically
 % impossible dynamics. 
 
-% Chi has a bandwidth of approx 1 Hz. We move the filter to 50 Hz to try to
+% Chi has a bandwidth of approx 1 Hz. We move the filter to 5 Hz to try to
 % not interfere with dynamics but getting rid of as much noise as possible.
 
 SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.SampleTime = 1/100;
-SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.BandwidthHz = 0.5;
+SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.BandwidthHz = 5;
 SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.TF = tf(SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.BandwidthHz*2*pi,...
                                                                [1 SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.BandwidthHz*2*pi]);
 SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.TFDigital = c2d(SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.TF, SkywalkerX8.Sensors.EKF.GPSSmoothing.Filters.ChiFilter.SampleTime);

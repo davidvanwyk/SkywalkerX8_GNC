@@ -13,7 +13,7 @@ function [r, qOut, c, rho, lambda, flag, i] = pathManager_followWaypointsFillet(
 % Wprev = Previous Waypoint path (to check if the Waypoint path has been
 % changed sinced the last iteration)
 % p = current aircraft location [pn, pe, pd] (m)
-% R = radius of the orbit We Want to folloW (m)
+% R = radius of the orbit we want to follow (m)
 
 % Outputs
 

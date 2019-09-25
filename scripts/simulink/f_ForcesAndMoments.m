@@ -68,9 +68,9 @@ CLAlpha = CL0 + CLalpha*alpha;
 
 %% Flat Plate Stall Model %%
 
-% sigma_alpha = (1 + exp(-M_trans*(alpha - alpha_0)) + exp(M_trans*(alpha + alpha_0)))/((1 + exp(-M_trans*(alpha - alpha_0)))*(1 + exp(M_trans*(alpha+alpha_0))));
-% CLAlpha = (1-sigma_alpha)*CLAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^2)*cos(alpha));
-% CDAlpha = (1-sigma_alpha)*CDAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^3));
+sigma_alpha = (1 + exp(-M_trans*(alpha - alpha_0)) + exp(M_trans*(alpha + alpha_0)))/((1 + exp(-M_trans*(alpha - alpha_0)))*(1 + exp(M_trans*(alpha+alpha_0))));
+CLAlpha = (1-sigma_alpha)*CLAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^2)*cos(alpha));
+CDAlpha = (1-sigma_alpha)*CDAlpha + sigma_alpha*(2*sign(alpha)*(sin(alpha)^3));
 
 %% Conversion of Drag and Lift Coeffecients in vehicle frame, CD and CL, to body frame, CX and CZ %%
 
@@ -92,7 +92,7 @@ Cn = Cn0 + Cnbeta*beta + Cnp*bOver2Va*p + Cnr*bOver2Va*r + Cnda*da;
 
 %% Flat Plate Stall Model %%
 
-% CmAlpha = (1 - sigma_alpha)*CmAlpha + sigma_alpha*(Cmfp*sign(alpha)*sin(alpha)^2);
+CmAlpha = (1 - sigma_alpha)*CmAlpha + sigma_alpha*(Cmfp*sign(alpha)*sin(alpha)^2);
 
 %% Calculating Forces %%
 

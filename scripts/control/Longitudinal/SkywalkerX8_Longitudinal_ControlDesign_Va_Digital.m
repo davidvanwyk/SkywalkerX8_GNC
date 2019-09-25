@@ -191,7 +191,7 @@ SkywalkerX8.Control.Longitudinal.VaDtController.Digital.lowerSaturationDt = 0;
 % so we can generate a
 % limit on gain from these 2 values:
 
-VaDtGainLimit = dtMax/VaChangeMax;
+VaDtGainLimit = 10*dtMax/VaChangeMax;
 
 % and we assume this will only really be commanded if we are in trim
 
@@ -207,7 +207,7 @@ R1.Focus = [1E-02 1E02];
 % possible (and around a 5% OS for a 2nd order system). So we assume this
 
 gainMargin = 6; % >6 dB gain margin ideally
-phaseMargin = 60; % 60 deg phase margin should provide adequate damping
+phaseMargin = 40; % 40 deg phase margin should provide adequate damping
 R2 = TuningGoal.Margins('SkywalkerX8_Longitudinal_Control_Digital/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/Va', gainMargin, phaseMargin);
 R2.Focus = [1E-02 1E02];
 
@@ -215,24 +215,24 @@ R2.Focus = [1E-02 1E02];
 % 12 rad/s so that it's much faster than the theta loop. We try and bump this
 % up slightly so that it's as fast as it can be.
 
-LS = frd([100 1 0.0001],[0.03 3 300]);  
+LS = frd([100 1 0.0001],[0.1 10 1000]);  
 R3 = TuningGoal.LoopShape('Va', LS, 0.5);
 
 % Next we simply add a goal for our response in the time domain. We'd like
 % this to be as fast as possible, given the previous constraints on
 % crossover frequency and margins. 
 
-wn = 0.1/2.2; %We want a rise time of approximately 0.5 s so we divide by 2.2 to get 
+wn = 0.05/2.2; %We want a rise time of approximately 0.5 s so we divide by 2.2 to get 
                %wn.
 OS = 4; %4% overshoot is fine on Va and corresponds to the 70 degree phase
         %we specified previously
 
 R4 = TuningGoal.StepTracking('Va_c', 'Va', wn, OS);
 
-% Filter Frequency is kept low because the actuator can only respond in 0.2
-% s, so our lag is 5 rad/s - meaning we limit this to half that.
+% Filter Frequency is kept to double the expected closed-loop bandwidth of 
+% the system.
 
-NGainLimit = 2.5;
+NGainLimit = 20;
 
 NGainLimitInput = 'SkywalkerX8_Longitudinal_Control_Digital/Gain Scheduled Controller Va_dt/PIDF Controller Va_dt/Sum/De';
 NGainLimitOutput = 'SkywalkerX8_Longitudinal_Control_Digital/Gain Scheduled Controller Va_dt/PIDF Controller Va_dt/Product1/NDe';
@@ -249,7 +249,7 @@ ST0.setBlockParam('PIDF Controller Va_dt Ki Lookup Table', Ki);
 ST0.setBlockParam('PIDF Controller Va_dt Kd Lookup Table', Kd);
 ST0.setBlockParam('PIDF Controller Va_dt N Lookup Table', N);
 
-STVaDt = systune(ST0, [R1, R2], [R3, R4, R5], sysTuneOpts);
+STVaDt = systune(ST0, [R1, R2], [R4, R5], sysTuneOpts);
 
 tableValues = getBlockValue(STVaDt);
 

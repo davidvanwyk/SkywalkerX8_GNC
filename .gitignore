@@ -24,5 +24,4 @@ octave-workspace
 # User Defined Ignores
 
 cache/
-code/
 .SimulinkProject/
