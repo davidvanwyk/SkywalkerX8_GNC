@@ -203,7 +203,9 @@ R2.Focus = [1E-02 1E02]; %Only focus on this frequency band
 % Next we know that our general response should have the standard gain
 % margin of 6 dB, and a 70 deg phase margin forces a response that does not
 % have a resonance peak, while still ensuring as rapid a response as
-% possible (and around a 5% OS for a 2nd order system). So we assume this
+% possible (and around a 5% OS for a 2nd order system). However, we will 
+% accept a lower phase margin in the small signal design so as to allow for 
+% faster transients to the saturation limits on roll angle.
 
 gainMargin = 6; % >6 dB gain margin ideally
 phaseMargin = 30; % 30 deg phase margin should provide adequate damping
@@ -211,7 +213,7 @@ R3 = TuningGoal.Margins('SkywalkerX8_Lateral_Control/SkywalkerX8 Aircraft + Aero
 R3.Focus = [1E-02 1E02];
 
 % Next we know that our theta controller was capable of having a crossover
-% frequency at approximately 2 rad/s. We also know that da -> l
+% frequency at approximately 8 rad/s. We also know that da -> l
 % aerodynamically has about half the gain of de -> m. This, as well as the
 % fact that Jyy is only 13.85% of Jxx means we expect our roll to be
 % substantially slower than our pitch. We will aim for approximately 25-30%
@@ -233,7 +235,8 @@ R4 = TuningGoal.LoopShape('Phi', LS, 0.5);
 
 % We use the above, and take into account needing our inner phi loop to be
 % 2-3x faster than the outer loop to reduce the requirement for this inner
-% loop.
+% loop. We then increase this so as to account for the small signal
+% analysis.
 
 chiMax = 90*pi/180;
 
@@ -326,8 +329,8 @@ tunedBlocks = {'PIDF Controller Chi Kp 2D Lookup Table',...
 minRealTolerance = 1E-05;
 
 % We now reduce these models to make the tuning easier. We know our
-% bandwidth for this control loop is approximately 0.25 rad/s, as such, we
-% can ignore any dynamics higher than around 0.75 rad/s when tuning. As
+% bandwidth for this control loop is approximately 0.2 rad/s, as such, we
+% can ignore any dynamics higher than around 0.8 rad/s when tuning. As
 % such, we can use a reducton for r to a 3rd order model, and a reduction
 % for Chi as a first order model. This should drastically simplify our
 % tuning efforts.
@@ -436,7 +439,8 @@ R1.Focus = [1E-02 1E02];
 % Next we know that our general response should have the standard gain
 % margin of 6 dB, and a 70 deg phase margin forces a response that does not
 % have a resonance peak, while still ensuring as rapid a response as
-% possible (and around a 5% OS for a 2nd order system). So we assume this
+% possible (and around a 5% OS for a 2nd order system). But we allow for a
+% lower phase margin in the interests of increasing the system bandwidth
 
 gainMargin = 6; % >6 dB gain margin ideally
 phaseMargin = 40; % 40 deg phase margin should provide adequate damping
@@ -444,8 +448,8 @@ R2 = TuningGoal.Margins('SkywalkerX8_Lateral_Control/SkywalkerX8 Aircraft + Aero
 R2.Focus = [1E-02 1E02];
 
 % Next we know that our phi controller has a crossover frequency at
-% approximately 0.75 rad/s. In order to have this be uncoupled for the
-% inner loop dynamics, we specify a 3x bandwidth seperation.
+% approximately 10 rad/s. In order to have this be uncoupled for the
+% inner loop dynamics, we specify a 50x bandwidth seperation.
 
 LS = frd([100000 1 0.001],[0.002 0.2 2]);  
 R3 = TuningGoal.LoopShape('Chi', LS, 0.5);

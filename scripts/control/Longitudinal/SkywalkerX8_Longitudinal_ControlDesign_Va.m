@@ -97,7 +97,8 @@ tunedBlocks = {'PIDF Controller Va_dt Kp Lookup Table',...
 
 minRealTolerance = 1E-05;
 
-VaDtPlantSubValue = [SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.Dt2VaLinearizedModels tf(0);...
+VaDtPlantSubValue = [SkywalkerX8.Control.Longitudinal...
+                    .LinearizedPlantModels.Dt2VaLinearizedModels tf(0);...
                     tf(0) tf(0);...
                     tf(0) tf(0);...
                     tf(0) tf(0);...
@@ -195,12 +196,14 @@ ST0.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodyna
 
 % We know that dt cannot exceed 1. We also know what our expected maximum
 % and minimum airspeeds are, so we use these to define our gain limit as being 
-% approximately 10% (small signal) of the absolute max difference in Va. 
+% approximately 50% (small signal) of the absolute max difference in Va. 
 % We also take this chance to set saturation limits.
 
 dtMax = 1;
-VaChangeMax = (SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(end)...
-              - SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(1))*1/2;
+VaChangeMax = (SkywalkerX8.Control.Longitudinal...
+               .SchedulingVariables.VaArray(end)...
+              - SkywalkerX8.Control.Longitudinal...
+                .SchedulingVariables.VaArray(1))*1/2;
           
 SkywalkerX8.Control.Longitudinal.VaDtController.upperSaturationDt = dtMax;
 SkywalkerX8.Control.Longitudinal.VaDtController.lowerSaturationDt = 0;
@@ -219,7 +222,7 @@ R1 = TuningGoal.Gain(VaDtPGainLimitInput, VaDtPGainLimitOutput, VaDtGainLimit);
 R1.Focus = [1E-02 1E02];
 
 % Next we know that our general response should have the standard gain
-% margin of 6 dB, and a 70 deg phase margin forces a response that does not
+% margin of 6 dB, and a 60 deg phase margin forces a response that does not
 % have a resonance peak, while still ensuring as rapid a response as
 % possible (and around a 5% OS for a 2nd order system). So we assume this
 
@@ -229,7 +232,7 @@ R2 = TuningGoal.Margins('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft +
 R2.Focus = [1E-02 1E02];
 
 % Next we know that we want our crossover frequency to be at approximately
-% 12 rad/s so that it's much faster than the theta loop. We try and bump this
+% 3 rad/s so that it's much faster than the theta loop. We try and bump this
 % up slightly so that it's as fast as it can be.
 
 LS = frd([100 1 0.0001],[0.03 3 300]);  
@@ -239,7 +242,7 @@ R3 = TuningGoal.LoopShape('Va', LS, 0.5);
 % this to be as fast as possible, given the previous constraints on
 % crossover frequency and margins. 
 
-wn = 0.1/2.2; %We want a rise time of approximately 0.5 s so we divide by 2.2 to get 
+wn = 0.1/2.2; %We want a rise time of approximately 0.1 s so we divide by 2.2 to get 
                %wn.
 OS = 4; %4% overshoot is fine on Va and corresponds to the 70 degree phase
         %we specified previously
@@ -284,11 +287,16 @@ SkywalkerX8.Control.Longitudinal.VaDtController.NVaDt = squeeze(tableValues.PIDF
 % Note thase these are based on our basis function.
 
 TGS = getBlockParam(STVaDt);
-SkywalkerX8.Control.Longitudinal.VaDtController.BasisFunction = TGS.PIDF_Controller_Va_dt_Kp_Lookup_Table.BasisFunctions;
-SkywalkerX8.Control.Longitudinal.VaDtController.KpVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_Kp_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.VaDtController.KiVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_Ki_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.VaDtController.KdVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_Kd_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.VaDtController.NVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_N_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaDtController.BasisFunction = TGS.PIDF_Controller_Va_dt_Kp_Lookup_Table.BasisFunctions;
+SkywalkerX8.Control.Longitudinal...
+    .VaDtController.KpVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_Kp_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaDtController.KiVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_Ki_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaDtController.KdVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_Kd_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaDtController.NVaDtParameterizedGains = getData(TGS.PIDF_Controller_Va_dt_N_Lookup_Table);
 
 % Next we define our tracking constant (not used for controller design, but
 % provided by the designer to assist with bumpless transfer in

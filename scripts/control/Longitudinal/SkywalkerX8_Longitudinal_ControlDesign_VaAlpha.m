@@ -142,11 +142,15 @@ tunedBlocks = {'PIDF Controller theta Kp 2D Lookup Table',...
                'PDF Controller theta 2DOF Kd 2D Lookup Table',...
                'PDF Controller theta 2DOF N 2D Lookup Table'};
 
-thetaPlantSubValue = [tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2VaReducedModels;...
-                      tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2AltReducedModels;...
-                      tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2ThetaReducedModels;...
+thetaPlantSubValue = [tf(0) SkywalkerX8.Control.Longitudinal...
+                      .LinearizedPlantModels.De2VaReducedModels;...
+                      tf(0) SkywalkerX8.Control.Longitudinal...
+                      .LinearizedPlantModels.De2AltReducedModels;...
+                      tf(0) SkywalkerX8.Control.Longitudinal...
+                      .LinearizedPlantModels.De2ThetaReducedModels;...
                       tf(0) tf(0);...
-                      tf(0) SkywalkerX8.Control.Longitudinal.LinearizedPlantModels.De2qReducedModels];
+                      tf(0) SkywalkerX8.Control.Longitudinal...
+                      .LinearizedPlantModels.De2qReducedModels];
                           
 thetaPlantSubName = plantSubName;
 
@@ -251,8 +255,10 @@ ST0.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodyna
 thetaMax = 60*pi/180*0.5;
 deMax = 2*15*pi/180; %x2 because our mixing matrix essentially halves this across 2 actuators
 
-SkywalkerX8.Control.Longitudinal.thetaController.upperSaturationNegativeDe = deMax;
-SkywalkerX8.Control.Longitudinal.thetaController.lowerSaturationNegativeDe = -deMax;
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .upperSaturationNegativeDe = deMax;
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .lowerSaturationNegativeDe = -deMax;
 
 % so we can generate a
 % limit on gain from these 2 values:
@@ -286,9 +292,9 @@ R2.Openings = NGainLimitLoopOpening;
 R2.Focus = [1E-02 1E02]; %Only focus on this frequency band
 
 % Next we know that our general response should have the standard gain
-% margin of 6 dB, and a 70 deg phase margin forces a response that does not
-% have a resonance peak, while still ensuring as rapid a response as
-% possible (and around a 5% OS for a 2nd order system). So we assume this
+% margin of 6 dB, and a 40 deg phase margin should provide adequate damping, 
+% while still ensuring as rapid a response as possible (and around a 10% OS 
+% for a 2nd order system). So we assume this
 
 gainMargin = 6; % >6 dB gain margin ideally
 phaseMargin = 40; % 70 deg phase margin would provide adequate damping 1/sqrt(2) <= zeta < 1 - but we are fine with this being a bit lower in the interests of getting better response if possible
@@ -301,7 +307,7 @@ R3.Focus = [1E-02 1E02]; %Only focus on this frequency band
 % the plant prior to this so that our reduced order models are accurate and
 % the inaccuracies are minimized by the rolloff. We also try and aim for a
 % 40 dB/decade rolloff after the crossover frequency and allow a tolerance
-% of half a decade (ie. 1.5 -> 2.5 rad/s crossover) at the crossover.
+% of half a decade (ie. 2.5 -> 3.5 rad/s crossover) at the crossover.
 
 LS = frd([100 1 0.0001],[0.03 3.0 300]);  
 R4 = TuningGoal.LoopShape('theta', LS, 0.5);
@@ -310,7 +316,7 @@ R4 = TuningGoal.LoopShape('theta', LS, 0.5);
 % lag. We also know that the desirable response time is what it would take
 % for the system flying at its current airspeed (Va) at the maximum
 % expected theta (assumed 60 degrees). As such, we want a variable tuning
-% goal as a function of Va. We will slow this down by 10% in order to
+% goal as a function of Va. We will slow this down by 5% in order to
 % account for the need to first establish the desired theta (ie. Va at
 % theta = 60 degrees would be our optimal solution assuming theta = 60
 % could be achieved instantly). We will make this specification for rise
@@ -319,13 +325,13 @@ R4 = TuningGoal.LoopShape('theta', LS, 0.5);
 % We also know the theta loop needs to be adequately far enough away in
 % bandwidth so that it has minimal impact on the altitude loop. As such, we
 % specify a bandwidth separation in terms of a faster rise time. We also
-% allow 10% overshoot because this is an internal loop so overshoot is not
+% allow 5% overshoot because this is an internal loop so overshoot is not
 % much of an issue for us.
 
-altMax = 122*0.1;
+altMax = 122*0.1; %Small signal design goal
 tauScalar = 1.05;
 riseTimeToTau = 1/2.2;
-bandwidthSeparation = 20;
+bandwidthSeparation = 20; %Small signal design goal
 tauValues = zeros(nVa, nalpha); 
 OSValues = zeros(nVa, nalpha);
 
@@ -393,14 +399,21 @@ SkywalkerX8.Control.Longitudinal.thetaController.NTheta2DOF = squeeze(tableValue
 
 TGS = getBlockParam(STTheta);
 SkywalkerX8.Control.Longitudinal.thetaController.BasisFunction = TGS.PIDF_Controller_theta_Kp_2D_Lookup_Table.BasisFunctions;
-SkywalkerX8.Control.Longitudinal.thetaController.KpThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_Kp_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.thetaController.KiThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_Ki_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.thetaController.KdThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_Kd_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.thetaController.NThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_N_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .KpThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_Kp_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .KiThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_Ki_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .KdThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_Kd_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .NThetaParameterizedGains = getData(TGS.PIDF_Controller_theta_N_2D_Lookup_Table);
 
-SkywalkerX8.Control.Longitudinal.thetaController.KpTheta2DOFParameterizedGains = getData(TGS.PDF_Controller_theta_2DOF_Kp_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.thetaController.KdTheta2DOFParameterizedGains = getData(TGS.PDF_Controller_theta_2DOF_Kd_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.thetaController.NTheta2DOFParameterizedGains = getData(TGS.PDF_Controller_theta_2DOF_N_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .KpTheta2DOFParameterizedGains = getData(TGS.PDF_Controller_theta_2DOF_Kp_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .KdTheta2DOFParameterizedGains = getData(TGS.PDF_Controller_theta_2DOF_Kd_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal.thetaController...
+    .NTheta2DOFParameterizedGains = getData(TGS.PDF_Controller_theta_2DOF_N_2D_Lookup_Table);
 
 disp('Theta Control Loop Design Complete')
         
@@ -432,25 +445,6 @@ tunedBlocks = {'PIDF Controller h_theta Kp 2D Lookup Table',...
 % By ensuring that we keep our bandwidth lower than 2-3 x that of the theta
 % controller we can trivialise our plant to De2Alt/De2Theta (ie. Theta to
 % Alt) because we can assume theta_c to theta is unity gain. 
-
-% Response 1: 
-% The above isn't really true and a better solution is to just use the
-% previous results to calculate an actual theta2alt model, so this is what
-% we changed. The reason for this change is that when reviewing the design,
-% the theta controller seemed to work almost exactly - but we had
-% instabilities in altitude; so this is to attempt to combat that.
-
-% Note that we add a minreal because there is pole-zero cancellation and if
-% we don't then sltuner will break because it thinks the fixed integrator
-% will cause instabilities but it's just a modelling artifact.
-
-% Response 2:
-% This isn't good enough because theta_c to h still makes use of the
-% reduced models. In order to design properly; we will need to make use of
-% the non-reduced models. We can, however, proceed with confidence in
-% knowing that theta_c to theta works as expected so there is no
-% uncertainty about which controller is at fault and we can focus our
-% efforts on the altitude controller.
 
 % We can get theta_c to alt as the sub model and then we can simply replace
 % the theta controller with feedthrough an open up q and theta. This is
@@ -580,8 +574,8 @@ ST0.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodyna
 
 % We'll make the assumption that theta will not exceed 60 degrees, and we
 % know our maximum altitude is 122 m by law - so let's assume 10% of that
-% will be the largest seen error signal (small signal). We also take this opportunity to
-% set our saturation limits.
+% will be the largest seen error signal (small signal). We also take this 
+% opportunity to set our saturation limits.
 
 thetaMax = 60*pi/180;
 altMax = 122*0.1;
@@ -606,18 +600,20 @@ R1.Focus = [1E-02 1E02];
 
 % Next we know that our general response should have the standard gain
 % margin of 6 dB, and a 60 deg phase margin forces a response that does not
-% have a resonance peak, while still ensuring as rapid a response as
-% possible (and around a 5% OS for a 2nd order system). So we assume this
+% have a resonance peak, but we accept slightly lower in the interest of 
+% better performance,
+% while still ensuring as rapid a response as possible (and around a 5% OS 
+% for a 2nd order system). So we assume this
 
 gainMargin = 6; % >6 dB gain margin ideally
 phaseMargin = 45; % 45 deg phase margin would provide adequate damping
 R2 = TuningGoal.Margins('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodynamics Longitudinal/h', gainMargin, phaseMargin);
 R2.Focus = [1E-02 1E02];
 
-% Next we know that we want our crossover frequency to be at 0.2 rad/s, as
+% Next we know that we want our crossover frequency to be at 1.0 rad/s, as
 % from our previous design we know our cutoff frequency was at
-% approximately 1 rad/s, so we can reduce the inner-loop to a unity gain if
-% we band limit this outer loop to 1/5th the cutoff frequency of the inner
+% approximately 10 rad/s, so we can reduce the inner-loop to a unity gain if
+% we band limit this outer loop to 1/10th the cutoff frequency of the inner
 % loop.
 
 LS = frd([1000000 1 0.0001],[0.01 1.0 100]);  
@@ -866,11 +862,15 @@ ST0.addOpening('SkywalkerX8_Longitudinal_Control/SkywalkerX8 Aircraft + Aerodyna
 % set our saturation limits.
 
 thetaMax = 60*pi/180;
-VaChangeMax = (SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(end)...
-              - SkywalkerX8.Control.Longitudinal.SchedulingVariables.VaArray(1))*2/3;
+VaChangeMax = (SkywalkerX8.Control.Longitudinal...
+               .SchedulingVariables.VaArray(end)...
+              - SkywalkerX8.Control.Longitudinal...
+                .SchedulingVariables.VaArray(1))*2/3;
 
-SkywalkerX8.Control.Longitudinal.VaThetaController.upperSaturationThetaC = thetaMax;
-SkywalkerX8.Control.Longitudinal.VaThetaController.lowerSaturationThetaC = -thetaMax;
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.upperSaturationThetaC = thetaMax;
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.lowerSaturationThetaC = -thetaMax;
 
 % so we can generate a
 % limit on gain from these 2 values:
@@ -941,11 +941,16 @@ SkywalkerX8.Control.Longitudinal.VaThetaController.NVaTheta = squeeze(tableValue
 % Note thase these are based on our basis function.
 
 TGS = getBlockParam(STVaTheta);
-SkywalkerX8.Control.Longitudinal.VaThetaController.BasisFunction = TGS.PIDF_Controller_Va_theta_Kp_2D_Lookup_Table.BasisFunctions;
-SkywalkerX8.Control.Longitudinal.VaThetaController.KpVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_Kp_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.VaThetaController.KiVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_Ki_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.VaThetaController.KdVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_Kd_2D_Lookup_Table);
-SkywalkerX8.Control.Longitudinal.VaThetaController.NVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_N_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.BasisFunction = TGS.PIDF_Controller_Va_theta_Kp_2D_Lookup_Table.BasisFunctions;
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.KpVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_Kp_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.KiVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_Ki_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.KdVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_Kd_2D_Lookup_Table);
+SkywalkerX8.Control.Longitudinal...
+    .VaThetaController.NVaThetaParameterizedGains = getData(TGS.PIDF_Controller_Va_theta_N_2D_Lookup_Table);
 
 % Next we define our tracking constant (not used for controller design, but
 % provided by the designer to assist with bumpless transfer in
