@@ -1,10 +1,15 @@
+Guidance, Navigation & Control of a Small, Unmanned Blended Wing Body Aircraft
+==============================================================================
+
+This repository contains all of the MATLAB/Simulink scripts and models used in the development of a full GNC suite for a Skywalker X8 aircraft.
+
 Instructions
-============
+------------
 
 Using this work should be fairly trivial. Should one wish to start from a working point, simply load the SkywalkerX8.mat file. This will also be done automatically if the Masters.prj file is loaded within MATLAB to open the Simulink project, which should also handle all required project pathing.
 
 System setup
-------------
+############
 
 If not using the .mat file, run from scripts/setup:
 
@@ -16,7 +21,7 @@ If not using the .mat file, run from scripts/setup:
 
 
 Performance Calculation
------------------------
+#######################
 
 This allows one to characterise the performance of the airframe and can be used by running the following in the corresponding order:
 
@@ -28,7 +33,7 @@ In scripts/performance
 This should output a flight envelope with the corner points used to show some performance characteristics
 
 Autopilot Design
-----------------
+################
 
 The autopilot is designed in 2 steps.
 
@@ -54,14 +59,14 @@ In scripts/control/Lateral
 2. SkywalkerX8_Lateral_ControlDesign_Va.m
 
 State Estimation
-----------------
+################
 
 In scripts/control/StateEstimation
 
 1. setup_StateEstimation.m
 
 Guidance and Navigation
------------------------
+#######################
 
 In scripts/guidance
 
