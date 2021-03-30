@@ -1,7 +1,7 @@
 Guidance, Navigation & Control of a Small, Unmanned Blended Wing Body Aircraft
 ==============================================================================
 
-This repository contains all of the MATLAB/Simulink scripts and models used in the development of a full GNC suite for a Skywalker X8 aircraft.
+This repository contains all of the MATLAB/Simulink scripts and models used in the development of a full GNC suite for a Skywalker X8 aircraft. This was performed as part of the research for an MSc. at UCT named Guidance, Navigation and Control of a Small, Unmanned Blended Wing Body Aircraft - the dissertation of which can be found here: https://open.uct.ac.za/handle/11427/32426. 
 
 Instructions
 ------------
